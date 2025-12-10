@@ -468,12 +468,40 @@
 
 ## Phase 3: 상세페이지 (`/places/[contentId]`)
 
-- [ ] 페이지 기본 구조
-  - [ ] `app/places/[contentId]/page.tsx` 생성
-    - [ ] 동적 라우팅 설정
-    - [ ] 뒤로가기 버튼 (헤더)
-    - [ ] 기본 레이아웃 구조
-    - [ ] 라우팅 테스트
+- [x] 페이지 기본 구조
+  - [x] `app/places/[contentId]/page.tsx` 생성
+    - [x] 동적 라우팅 설정
+    - [x] 뒤로가기 버튼 (헤더)
+    - [x] 기본 레이아웃 구조
+    - [x] 라우팅 테스트
+  ***
+  - [x] app/places/[contentId]/page.tsx 생성
+    - [x] Next.js 15 App Router 동적 라우팅 설정 ([contentId] 폴더 구조)
+    - [x] params를 await하여 사용 (Next.js 15 요구사항)
+    - [x] contentId 파라미터 추출 및 검증
+    - [x] Server Component로 구현 (초기 데이터 페칭)
+    - [x] getDetailCommon() API 연동
+  - [x] 뒤로가기 버튼 구현
+    - [x] BackButton 컴포넌트 생성 (페이지 내부)
+    - [x] ArrowLeft 아이콘 사용 (lucide-react)
+    - [x] Link 컴포넌트로 홈페이지 이동
+    - [x] 반응형 디자인 (모바일/데스크톱)
+    - [x] 접근성 (ARIA 라벨)
+  - [x] 기본 레이아웃 구조
+    - [x] 단일 컬럼 레이아웃 (모바일 우선)
+    - [x] 최대 너비 설정 (max-w-7xl, 홈페이지와 일치)
+    - [x] 반응형 패딩 (px-4 md:px-6)
+    - [x] 섹션별 카드 스타일 (rounded-lg border bg-card p-6)
+    - [x] 임시 섹션 구조 생성 (기본 정보, 운영 정보, 이미지 갤러리, 지도)
+  - [x] 로딩 및 에러 상태
+    - [x] Suspense 경계 설정 (DetailSkeleton 사용)
+    - [x] 에러 처리 (404, API 에러, 네트워크 에러)
+    - [x] notFound() 함수 사용 (존재하지 않는 contentId)
+    - [x] Error 컴포넌트 사용 (에러 메시지 표시)
+  - [x] 라우팅 테스트
+    - [x] components/tour-card.tsx에서 상세페이지 링크 확인 (/places/${tour.contentid})
+    - [x] TypeScript 컴파일 에러 없음 확인
+    - [x] 린터 에러 없음 확인
 - [ ] 기본 정보 섹션 (MVP 2.4.1)
   - [ ] `components/tour-detail/detail-info.tsx` 생성
     - [ ] `getDetailCommon()` API 연동
