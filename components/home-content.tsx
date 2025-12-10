@@ -16,7 +16,7 @@ import type { TourItem } from "@/lib/types/tour";
 import TourList from "@/components/tour-list";
 import NaverMap from "@/components/naver-map";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+
 
 export interface HomeContentProps {
   tours: TourItem[];

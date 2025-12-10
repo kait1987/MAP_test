@@ -14,14 +14,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+
 import type { TourItem } from "@/lib/types/tour";
 import { convertKATECToWGS84 } from "@/lib/utils/coordinate";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Error } from "@/components/ui/error";
-import { MapPin } from "lucide-react";
+
 
 export interface NaverMapProps {
   tours: TourItem[];
