@@ -61,29 +61,81 @@
       - [x] `normalizeItems()` - API 응답 items 배열 정규화
     - [x] 각 API 함수에 JSDoc 주석 및 예시 추가
     - [x] 타입 안전성 보장 (TypeScript strict mode)
-- [ ] 타입 정의
-  - [ ] `lib/types/tour.ts` 생성
-    - [ ] `TourItem` 인터페이스 (목록)
-    - [ ] `TourDetail` 인터페이스 (상세)
-    - [ ] `TourIntro` 인터페이스 (운영정보)
-    - [ ] `TourImage` 인터페이스 (이미지)
-    - [ ] `PetTourInfo` 인터페이스 (반려동물)
-  - [ ] `lib/types/stats.ts` 생성
-    - [ ] `RegionStats` 인터페이스
-    - [ ] `TypeStats` 인터페이스
-    - [ ] `StatsSummary` 인터페이스
-- [ ] 레이아웃 구조
-  - [ ] `app/layout.tsx` 업데이트
-    - [ ] 메타데이터 설정
-    - [ ] 헤더/푸터 구조 확인
-  - [ ] `components/Navbar.tsx` 업데이트
-    - [ ] 로고, 검색창, 로그인 버튼
-    - [ ] 네비게이션 링크 (홈, 통계, 북마크)
-- [ ] 공통 컴포넌트
-  - [ ] `components/ui/loading.tsx` - 로딩 스피너
-  - [ ] `components/ui/skeleton.tsx` - 스켈레톤 UI
-  - [ ] `components/ui/error.tsx` - 에러 메시지
-  - [ ] `components/ui/toast.tsx` - 토스트 알림 (shadcn/ui)
+- [x] 타입 정의
+  - [x] `lib/types/tour.ts` 생성
+    - [x] `TourItem` 인터페이스 (목록)
+    - [x] `TourDetail` 인터페이스 (상세)
+    - [x] `TourIntro` 인터페이스 (운영정보)
+    - [x] `TourImage` 인터페이스 (이미지)
+    - [x] `PetTourInfo` 인터페이스 (반려동물)
+    ***
+    - [x] `AreaCodeItem` 인터페이스 (지역코드 조회 응답)
+    - [x] `ApiResponse<T>` 인터페이스 (공통 응답 구조)
+    - [x] `PagedResponse<T>` 인터페이스 (페이지네이션 포함 응답)
+    - [x] `CONTENT_TYPE` 상수 객체 (관광 타입 ID)
+    - [x] `ContentTypeId` 타입 정의
+    - [x] PRD.md 5장 (데이터 구조)와 비교 검증 완료
+  - [x] `lib/types/stats.ts` 생성
+    - [x] `RegionStats` 인터페이스
+    - [x] `TypeStats` 인터페이스
+    - [x] `StatsSummary` 인터페이스
+    ***
+    - [x] `CONTENT_TYPE_NAMES` 상수 객체 (타입 ID와 이름 매핑)
+    - [x] `getContentTypeName()` 유틸리티 함수
+    - [x] PRD.md 2.6 (통계 대시보드)와 비교 검증 완료
+- [x] 레이아웃 구조
+  - [x] `app/layout.tsx` 업데이트
+    - [x] 메타데이터 설정
+    - [x] 헤더/푸터 구조 확인
+    ***
+    - [x] Footer 컴포넌트 import 및 추가
+    - [x] 레이아웃 구조 확인 (Navbar → children → Footer)
+  - [x] `components/Navbar.tsx` 업데이트
+    - [x] 로고, 검색창, 로그인 버튼
+    - [x] 네비게이션 링크 (홈, 통계, 북마크)
+    ***
+    - [x] 로고 표시 확인 ("My Trip")
+    - [x] 검색창 UI 확인 (기능은 Phase 2에서 구현)
+    - [x] 로그인 버튼 확인 (Clerk 연동)
+    - [x] 네비게이션 링크 확인 (홈, 통계, 북마크)
+    - [x] 반응형 디자인 확인 (모바일 햄버거 메뉴)
+    - [x] 현재 페이지 하이라이트 확인
+    - [x] PRD.md 및 design.md 요구사항과 일치 여부 확인
+  - [x] `components/Footer.tsx` 생성
+    - [x] 저작권 표시 (© 2025)
+    - [x] About, Contact 링크 (향후 구현 예정)
+    - [x] API 제공자 표시 ("한국관광공사 API 제공")
+    - [x] 반응형 디자인 (모바일: 세로 배치, 데스크톱: 가로 배치)
+    - [x] design.md 요구사항과 일치 여부 확인
+- [x] 공통 컴포넌트
+  - [x] `components/ui/loading.tsx` - 로딩 스피너
+    - [x] lucide-react Loader2 아이콘 사용 (회전 애니메이션)
+    - [x] 크기 변형 (sm, md, lg)
+    - [x] 색상 변형 (default, primary, muted)
+    - [x] ARIA 라벨 추가 (접근성)
+    - [x] 다크/라이트 모드 지원
+    - [x] PRD 7.3 요구사항 확인 (지도 로딩: 스피너)
+  - [x] `components/ui/skeleton.tsx` - 스켈레톤 UI
+    - [x] shadcn/ui skeleton 컴포넌트 설치
+    - [x] 펄스 애니메이션 구현
+    - [x] 다양한 형태 지원 (텍스트, 카드, 이미지 등)
+    - [x] 다크/라이트 모드 지원
+    - [x] PRD 7.3 요구사항 확인 (리스트 로딩: 스켈레톤 UI)
+  - [x] `components/ui/error.tsx` - 에러 메시지
+    - [x] 에러 타입별 아이콘 및 메시지 (api, network, 404, generic)
+    - [x] 재시도 버튼 (onRetry 콜백)
+    - [x] 홈으로 돌아가기 버튼 (404 에러 시)
+    - [x] lucide-react 아이콘 사용 (AlertCircle, WifiOff, FileX, AlertTriangle)
+    - [x] ARIA 라벨 및 역할 설정 (접근성)
+    - [x] 다크/라이트 모드 지원
+    - [x] PRD 7.4 요구사항 확인 (API 에러, 네트워크 에러, 404)
+  - [x] `components/ui/toast.tsx` - 토스트 알림 (shadcn/ui)
+    - [x] shadcn/ui sonner 컴포넌트 설치
+    - [x] Toaster Provider를 layout.tsx에 추가
+    - [x] toast 유틸리티 함수 구현 (success, error, info, warning, loading, promise)
+    - [x] 자동 닫기 기능 (기본 3초, 에러는 4초)
+    - [x] 다크/라이트 모드 지원
+    - [x] PRD 2.4.5 요구사항 확인 (URL 복사 완료 토스트)
 
 ## Phase 2: 홈페이지 (`/`) - 관광지 목록
 
