@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Navigation, Copy, Check, Info } from "lucide-react";
 import type { TourDetail } from "@/lib/types/tour";
 import { convertKATECToWGS84 } from "@/lib/utils/coordinate";
@@ -106,27 +106,18 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
   const [showCoordinates, setShowCoordinates] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // 좌표가 없으면 섹션을 표시하지 않음
-  if (!detail.mapx || !detail.mapy) {
-    return null;
-  }
-
-  // 좌표 변환
-  let coords: { lat: number; lng: number } | null = null;
-  try {
-    coords = convertKATECToWGS84(detail.mapx, detail.mapy);
-  } catch (err) {
-    console.error("좌표 변환 실패:", err);
-    return (
-      <section className={cn("rounded-lg border bg-card p-6 md:p-8", className)}>
-        <h2 className="text-2xl font-bold text-foreground mb-4">지도</h2>
-        <Error
-          type="api"
-          message="좌표 정보를 불러올 수 없습니다."
-        />
-      </section>
-    );
-  }
+  // 좌표 변환 (useMemo로 처리하여 Hook 규칙 준수)
+  const coords = useMemo(() => {
+    if (!detail.mapx || !detail.mapy) {
+      return null;
+    }
+    try {
+      return convertKATECToWGS84(detail.mapx, detail.mapy);
+    } catch (err) {
+      console.error("좌표 변환 실패:", err);
+      return null;
+    }
+  }, [detail.mapx, detail.mapy]);
 
   // 지도 초기화
   useEffect(() => {
@@ -296,6 +287,11 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
 
   // 길찾기 URL 생성
   const directionsUrl = coords ? getDirectionsUrl(coords.lat, coords.lng) : null;
+
+  // 좌표가 없으면 섹션을 표시하지 않음 (Hook 호출 이후에 early return)
+  if (!coords) {
+    return null;
+  }
 
   if (error) {
     return (

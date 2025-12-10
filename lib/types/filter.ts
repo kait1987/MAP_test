@@ -38,6 +38,8 @@ export const DEFAULT_FILTERS: Required<Omit<FilterParams, "areaCode" | "contentT
   arrange: "C", // 최신순
   pageNo: 1,
   numOfRows: 12,
+  petAllowed: undefined,
+  petSize: undefined,
 } as const;
 
 /**

@@ -72,7 +72,9 @@ declare global {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace naver {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace maps {
       interface Map {
         panTo(latlng: LatLng): void;
