@@ -2,8 +2,8 @@
 
 import { SignedOut, SignInButton, SignedIn, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import { Search, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,16 +24,37 @@ import { Input } from "@/components/ui/input";
 
 const Navbar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 검색 처리 (Phase 2에서 구현 예정)
+  // URL에서 검색 키워드 읽어와서 검색창에 표시
+  useEffect(() => {
+    const keyword = searchParams.get("keyword");
+    if (keyword) {
+      setSearchQuery(keyword);
+    } else {
+      setSearchQuery("");
+    }
+  }, [searchParams]);
+
+  // 검색 처리
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Phase 2에서 검색 기능 구현
     if (searchQuery.trim()) {
-      // TODO: 검색 페이지로 이동 또는 검색 실행
-      console.log("검색:", searchQuery);
+      // 현재 URL의 searchParams를 읽어서 필터 파라미터 유지
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("keyword", searchQuery.trim());
+      // pageNo는 검색 시 1로 리셋
+      params.delete("pageNo");
+      router.push(`/?${params.toString()}`);
+    } else {
+      // 검색어가 없으면 keyword 파라미터 제거
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("keyword");
+      params.delete("pageNo");
+      router.push(`/?${params.toString()}`);
     }
   };
 

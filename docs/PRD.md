@@ -637,14 +637,14 @@ components/
 ├── tour-detail/
 │   ├── detail-info.tsx         # 기본정보
 │   ├── detail-intro.tsx        # 운영정보
-│   ├── detail-gallery.tsx      # 이미지 갤러리
+│   ├── detail-gallery.tsx       # 이미지 갤러리
 │   ├── detail-map.tsx          # 지도
-│   ├── detail-pet-tour.tsx     # 반려동물 정보 (MVP 2.5)
-│   └── share-button.tsx        # URL 복사 공유 버튼
+│   ├── detail-pet-tour.tsx      # 반려동물 정보 (MVP 2.5)
+│   └── share-button.tsx         # URL 복사 공유 버튼
 ├── stats/
-│   ├── stats-summary.tsx       # 통계 요약 카드
-│   ├── region-chart.tsx        # 지역별 분포 차트 (Bar Chart)
-│   └── type-chart.tsx          # 타입별 분포 차트 (Donut Chart)
+│   ├── stats-summary.tsx        # 통계 요약 카드
+│   ├── region-chart.tsx         # 지역별 분포 차트 (Bar Chart)
+│   └── type-chart.tsx           # 타입별 분포 차트 (Donut Chart)
 ├── bookmarks/
 │   ├── bookmark-button.tsx     # 북마크 버튼 (별 아이콘)
 │   └── bookmark-list.tsx       # 북마크 목록

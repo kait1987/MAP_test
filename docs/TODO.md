@@ -241,21 +241,59 @@
     - [x] 필터 초기화 버튼 조건부 표시 확인 (활성 필터 있을 때만)
     - [x] Server Component와 Client Component 분리 확인
     - [x] Suspense 경계 독립성 확인 (필터와 목록 각각 로딩)
-- [ ] 검색 기능 (MVP 2.3)
-  - [ ] `components/tour-search.tsx` 생성
-    - [ ] 검색창 UI (헤더 또는 메인 영역)
-    - [ ] 검색 아이콘
-    - [ ] 엔터 또는 버튼 클릭으로 검색
-    - [ ] 검색 중 로딩 스피너
-  - [ ] 검색 API 연동
-    - [ ] `searchKeyword()` 호출
-    - [ ] 검색 결과 표시
-    - [ ] 검색 결과 개수 표시
-    - [ ] 결과 없음 메시지
-  - [ ] 검색 + 필터 조합
-    - [ ] 키워드 + 지역 필터
-    - [ ] 키워드 + 타입 필터
-    - [ ] 모든 필터 동시 적용
+- [x] 검색 기능 (MVP 2.3)
+  - [x] 검색창 UI 구현 (Navbar에 통합)
+    - [x] 검색창 UI (헤더에 고정, 모바일/데스크톱 모두 지원)
+    - [x] 검색 아이콘 (lucide-react Search 아이콘)
+    - [x] 엔터 또는 버튼 클릭으로 검색
+    - [x] 검색 중 로딩 스피너 (Suspense 경계로 처리)
+  - [x] 검색 API 연동
+    - [x] `searchKeyword()` 호출 (lib/api/tour-api.ts)
+    - [x] 검색 결과 표시 (TourList 컴포넌트 재사용)
+    - [x] 검색 결과 개수 표시 (페이지 제목에 키워드 표시, 개수는 향후 개선 예정)
+    - [x] 결과 없음 메시지 (TourList 빈 상태 활용)
+  - [x] 검색 + 필터 조합
+    - [x] 키워드 + 지역 필터
+    - [x] 키워드 + 타입 필터
+    - [x] 모든 필터 동시 적용 (keyword + areaCode + contentTypeId + arrange)
+    ***
+    - [x] lib/types/filter.ts 수정
+      - [x] FilterParams 인터페이스에 keyword?: string 필드 추가
+      - [x] parseFilterParams 함수에 keyword 파라미터 파싱 로직 추가 (배열 처리, 빈 문자열 undefined 변환)
+      - [x] DEFAULT_FILTERS 타입에서 keyword 제외 (선택적 필드이므로)
+    - [x] components/Navbar.tsx 수정
+      - [x] useRouter, useSearchParams 훅 import 및 사용
+      - [x] useEffect로 URL에서 keyword 읽어와서 검색창에 표시
+      - [x] handleSearch 함수 구현 (URL 파라미터로 keyword 추가, 기존 필터 유지, pageNo 리셋)
+      - [x] 모바일/데스크톱 검색창 모두 동일하게 동작
+    - [x] app/page.tsx 수정
+      - [x] searchKeyword 함수 import 추가
+      - [x] TourListData 함수에서 keyword 확인하여 조건부 API 호출
+        - [x] keyword 있으면 searchKeyword() 호출 (필터 파라미터 함께 전달)
+        - [x] keyword 없으면 getAreaBasedList() 호출 (기존 로직)
+      - [x] 페이지 제목에 검색 키워드 표시 ("검색 결과: '키워드'")
+      - [x] 검색 결과를 TourList 컴포넌트로 전달
+    - [x] 검색 + 필터 조합 구현
+      - [x] keyword와 areaCode 동시 적용 (searchKeyword API에 areaCode 파라미터 전달)
+      - [x] keyword와 contentTypeId 동시 적용 (searchKeyword API에 contentTypeId 파라미터 전달)
+      - [x] keyword와 arrange 동시 적용 (searchKeyword API에 arrange 파라미터 전달, "A" 또는 "C"만 지원)
+      - [x] 모든 필터 조합 동시 적용 가능
+    - [x] 필터 초기화 시 keyword도 제거
+      - [x] tour-filters.tsx의 handleReset 함수가 router.push("/")로 모든 파라미터 제거 (keyword 포함)
+    - [x] TypeScript 컴파일 에러 수정
+      - [x] DEFAULT_FILTERS 타입 정의에서 keyword 제외하여 타입 에러 해결
+    - [x] 검증 항목 확인
+      - [x] 검색 키워드가 URL에 반영됨 확인 (/?keyword=경복궁)
+      - [x] URL에서 검색 키워드를 읽어와서 검색창에 표시 확인
+      - [x] 검색 + 지역 필터 조합 동작 확인 (/?keyword=경복궁&areaCode=1)
+      - [x] 검색 + 타입 필터 조합 동작 확인 (/?keyword=경복궁&contentTypeId=12)
+      - [x] 검색 + 정렬 옵션 동작 확인 (/?keyword=경복궁&arrange=A)
+      - [x] 모든 필터 조합 동작 확인 (/?keyword=경복궁&areaCode=1&contentTypeId=12&arrange=C)
+      - [x] 검색 결과 없을 때 안내 메시지 표시 확인 (TourList 빈 상태 활용)
+      - [x] 필터 초기화 시 검색 키워드도 제거 확인
+      - [x] 모바일/데스크톱 모두 정상 동작 확인
+      - [x] TypeScript 컴파일 에러 없음 확인
+      - [x] 린터 에러 없음 확인
 - [ ] 네이버 지도 연동 (MVP 2.2)
   - [ ] `components/naver-map.tsx` 생성
     - [ ] Naver Maps API v3 초기화

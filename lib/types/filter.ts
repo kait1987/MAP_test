@@ -23,12 +23,14 @@ export interface FilterParams {
   pageNo?: number;
   /** 페이지당 항목 수 (기본값: 12) */
   numOfRows?: number;
+  /** 검색 키워드 */
+  keyword?: string;
 }
 
 /**
  * 필터 기본값
  */
-export const DEFAULT_FILTERS: Required<Omit<FilterParams, "areaCode" | "contentTypeId">> = {
+export const DEFAULT_FILTERS: Required<Omit<FilterParams, "areaCode" | "contentTypeId" | "keyword">> = {
   arrange: "C", // 최신순
   pageNo: 1,
   numOfRows: 12,
@@ -43,6 +45,7 @@ export function parseFilterParams(searchParams: {
   arrange?: string | string[];
   pageNo?: string | string[];
   numOfRows?: string | string[];
+  keyword?: string | string[];
 }): FilterParams {
   const areaCode = Array.isArray(searchParams.areaCode)
     ? searchParams.areaCode[0]
@@ -59,6 +62,9 @@ export function parseFilterParams(searchParams: {
   const numOfRows = Array.isArray(searchParams.numOfRows)
     ? searchParams.numOfRows[0]
     : searchParams.numOfRows;
+  const keyword = Array.isArray(searchParams.keyword)
+    ? searchParams.keyword[0]
+    : searchParams.keyword;
 
   return {
     areaCode: areaCode || undefined,
@@ -66,6 +72,7 @@ export function parseFilterParams(searchParams: {
     arrange: (arrange === "A" || arrange === "C" ? arrange : undefined) || DEFAULT_FILTERS.arrange,
     pageNo: pageNo ? parseInt(pageNo, 10) : DEFAULT_FILTERS.pageNo,
     numOfRows: numOfRows ? parseInt(numOfRows, 10) : DEFAULT_FILTERS.numOfRows,
+    keyword: keyword && keyword.trim() ? keyword.trim() : undefined,
   };
 }
 

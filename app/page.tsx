@@ -13,7 +13,7 @@
  */
 
 import { Suspense } from "react";
-import { getAreaBasedList, getAreaCode } from "@/lib/api/tour-api";
+import { getAreaBasedList, getAreaCode, searchKeyword } from "@/lib/api/tour-api";
 import { CONTENT_TYPE } from "@/lib/types/tour";
 import { parseFilterParams, DEFAULT_FILTERS } from "@/lib/types/filter";
 import TourList from "@/components/tour-list";
@@ -53,15 +53,27 @@ async function TourListData({
     const numOfRows = filters.numOfRows || DEFAULT_FILTERS.numOfRows; // 12개
     const pageNo = filters.pageNo || DEFAULT_FILTERS.pageNo; // 1페이지
 
-    const tours = await getAreaBasedList({
-      areaCode,
-      contentTypeId,
-      numOfRows,
-      pageNo,
-      arrange,
-    });
-
-    return <TourList tours={tours} />;
+    // 검색 키워드가 있으면 검색 API 호출, 없으면 지역 기반 목록 API 호출
+    if (filters.keyword) {
+      const tours = await searchKeyword({
+        keyword: filters.keyword,
+        areaCode: filters.areaCode,
+        contentTypeId: filters.contentTypeId,
+        numOfRows,
+        pageNo,
+        arrange: arrange === "A" ? "A" : "C", // searchKeyword는 "A" 또는 "C"만 지원
+      });
+      return <TourList tours={tours} />;
+    } else {
+      const tours = await getAreaBasedList({
+        areaCode,
+        contentTypeId,
+        numOfRows,
+        pageNo,
+        arrange,
+      });
+      return <TourList tours={tours} />;
+    }
   } catch (error) {
     console.error("관광지 목록 로드 실패:", error);
     return (
@@ -95,6 +107,8 @@ interface HomePageProps {
 export default async function HomePage({ searchParams }: HomePageProps) {
   // searchParams를 await하여 사용
   const params = await searchParams;
+  const filters = parseFilterParams(params);
+  const keyword = filters.keyword;
 
   return (
     <main className="min-h-[calc(100vh-80px)] py-8">
@@ -102,10 +116,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         {/* 페이지 제목 */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            관광지 목록
+            {keyword ? `검색 결과: "${keyword}"` : "관광지 목록"}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            전국의 관광지를 검색하고 탐험해보세요
+            {keyword
+              ? "검색 결과를 확인해보세요"
+              : "전국의 관광지를 검색하고 탐험해보세요"}
           </p>
         </div>
 
