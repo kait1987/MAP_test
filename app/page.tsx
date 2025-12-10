@@ -1,50 +1,72 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { RiSupabaseFill } from "react-icons/ri";
+/**
+ * @file app/page.tsx
+ * @description My Trip 홈페이지 - 관광지 목록 페이지
+ *
+ * 주요 기능:
+ * 1. 관광지 목록 표시 (Phase 2 후반 구현)
+ * 2. 필터 기능 (지역, 타입, 반려동물) - Phase 2 후반 구현
+ * 3. 검색 기능 - Phase 2 후반 구현
+ * 4. 네이버 지도 연동 - Phase 2 후반 구현
+ *
+ * 현재 단계: 기본 레이아웃 구조만 구현 (필터, 목록, 지도 영역 placeholder)
+ *
+ * @see {@link /docs/PRD.md} - MVP 2.1, 2.2, 2.3 요구사항
+ * @see {@link /docs/design.md} - 레이아웃 디자인
+ */
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main className="min-h-[calc(100vh-80px)] flex items-center px-8 py-16 lg:py-24">
-      <section className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start lg:items-center">
-        {/* 좌측: 환영 메시지 */}
-        <div className="flex flex-col gap-8">
-          <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-            SaaS 앱 템플릿에 오신 것을 환영합니다
+    <main className="min-h-[calc(100vh-80px)] py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-6">
+        {/* 페이지 제목 */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            관광지 목록
           </h1>
-          <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-400 leading-relaxed">
-            Next.js, Shadcn, Clerk, Supabase, TailwindCSS로 구동되는 완전한
-            기능의 템플릿으로 다음 프로젝트를 시작하세요.
+          <p className="mt-2 text-muted-foreground">
+            전국의 관광지를 검색하고 탐험해보세요
           </p>
         </div>
 
-        {/* 우측: 버튼 세 개 세로 정렬 */}
-        <div className="flex flex-col gap-6">
-          <Link href="/instruments" className="w-full">
-            <Button className="w-full h-28 flex items-center justify-center gap-4 text-xl shadow-lg hover:shadow-xl transition-shadow">
-              <RiSupabaseFill className="w-8 h-8" />
-              <span>Supabase 연결 테스트</span>
-            </Button>
-          </Link>
-          <Link href="/storage-test" className="w-full">
-            <Button
-              className="w-full h-28 flex items-center justify-center gap-4 text-xl shadow-lg hover:shadow-xl transition-shadow"
-              variant="outline"
-            >
-              <RiSupabaseFill className="w-8 h-8" />
-              <span>Storage 파일 업로드 테스트</span>
-            </Button>
-          </Link>
-          <Link href="/auth-test" className="w-full">
-            <Button
-              className="w-full h-28 flex items-center justify-center gap-4 text-xl shadow-lg hover:shadow-xl transition-shadow"
-              variant="outline"
-            >
-              <RiSupabaseFill className="w-8 h-8" />
-              <span>Clerk + Supabase 인증 연동</span>
-            </Button>
-          </Link>
+        {/* 필터 영역 (placeholder) */}
+        <section
+          className="mb-8 p-4 rounded-lg border bg-card"
+          aria-label="필터 영역"
+        >
+          <p className="text-sm text-muted-foreground">
+            필터 기능은 Phase 2 후반에 구현 예정입니다.
+          </p>
+        </section>
+
+        {/* 메인 콘텐츠 영역 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 관광지 목록 영역 (좌측 또는 전체) */}
+          <section
+            className="min-h-[400px] p-6 rounded-lg border bg-card"
+            aria-label="관광지 목록"
+          >
+            <h2 className="text-xl font-semibold mb-4">관광지 목록</h2>
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <p className="text-center">
+                관광지 목록 기능은 Phase 2 후반에 구현 예정입니다.
+              </p>
+            </div>
+          </section>
+
+          {/* 지도 영역 (우측, 데스크톱만 표시) */}
+          <section
+            className="hidden lg:block min-h-[400px] p-6 rounded-lg border bg-card"
+            aria-label="지도"
+          >
+            <h2 className="text-xl font-semibold mb-4">지도</h2>
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <p className="text-center">
+                네이버 지도 연동은 Phase 2 후반에 구현 예정입니다.
+              </p>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
