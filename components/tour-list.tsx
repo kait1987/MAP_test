@@ -160,7 +160,6 @@ export default function TourList({
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
-            totalCount={pagination.totalCount}
           />
         </div>
       )}

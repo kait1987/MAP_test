@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 import type { TourItem } from "@/lib/types/tour";
 import { convertKATECToWGS84 } from "@/lib/utils/coordinate";
@@ -178,163 +178,10 @@ export default function NaverMap({
   const [error, setError] = useState<Error | null>(null);
 
   // 지도 초기화
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    let isMounted = true;
-
-    loadNaverMapsScript()
-      .then(() => {
-        if (!isMounted || !mapRef.current) return;
-
-        try {
-          // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
-          // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
-          let centerLat = 37.5665; // 서울 기본값
-          let centerLng = 126.9780;
-
-          // 유효한 좌표를 가진 첫 번째 관광지를 찾아 중심점으로 설정
-          for (const tour of tours) {
-            try {
-              if (tour.mapx && tour.mapy) {
-                const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-                centerLat = coords.lat;
-                centerLng = coords.lng;
-                break;
-              }
-            } catch (e) {
-              continue;
-            }
-          }
-
-          // 지도 생성
-          const map = new window.naver.maps.Map(mapRef.current, {
-            center: new window.naver.maps.LatLng(centerLat, centerLng),
-            zoom: 13,
-            zoomControl: true,
-            zoomControlOptions: {
-              position: window.naver.maps.Position.TOP_RIGHT,
-            },
-          });
-
-          mapInstanceRef.current = map;
-
-          // 마커 생성
-          updateMarkers(map, tours);
-
-          // 모든 마커가 보이도록 지도 범위 조정
-          if (tours.length > 0) {
-            const bounds = new window.naver.maps.LatLngBounds();
-            let hasValidBounds = false;
-            tours.forEach((tour) => {
-              try {
-                if (tour.mapx && tour.mapy) {
-                  const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-                  bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
-                  hasValidBounds = true;
-                }
-              } catch (e) {
-                // ignore
-              }
-            });
-            if (hasValidBounds) {
-              map.fitBounds(bounds);
-            }
-          }
-
-          setIsLoading(false);
-        } catch (err) {
-          if (isMounted) {
-            setError(
-              err instanceof globalThis.Error
-                ? err
-                : new globalThis.Error("지도 초기화 중 오류가 발생했습니다.")
-            );
-            setIsLoading(false);
-          }
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(
-            err instanceof globalThis.Error
-              ? err
-              : new globalThis.Error("Naver Maps API 로드 실패")
-          );
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-      // 마커 및 인포윈도우 정리
-      markersRef.current.forEach((marker) => marker.setMap(null));
-      infoWindowsRef.current.forEach((infoWindow) => infoWindow.close());
-      markersRef.current = [];
-      infoWindowsRef.current = [];
-    };
-  }, []); // 초기화는 한 번만
-
-  // 관광지 목록 변경 시 마커 업데이트
-  useEffect(() => {
-    if (!mapInstanceRef.current) return;
-
-    updateMarkers(mapInstanceRef.current, tours);
-
-    // 모든 마커가 보이도록 지도 범위 조정
-    if (tours.length > 0) {
-      const bounds = new window.naver.maps.LatLngBounds();
-      let hasValidBounds = false;
-      tours.forEach((tour) => {
-        try {
-          if (tour.mapx && tour.mapy) {
-            const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-            bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
-            hasValidBounds = true;
-          }
-        } catch (e) {
-          // ignore
-        }
-      });
-      if (hasValidBounds) {
-        mapInstanceRef.current.fitBounds(bounds);
-      }
-    }
-  }, [tours]);
-
-  // 선택된 관광지로 지도 이동
-  useEffect(() => {
-    if (!mapInstanceRef.current || !selectedTourId) return;
-
-    const selectedTour = tours.find((tour) => tour.contentid === selectedTourId);
-    if (!selectedTour) return;
-
-    const coords = convertKATECToWGS84(selectedTour.mapx, selectedTour.mapy);
-    const position = new window.naver.maps.LatLng(coords.lat, coords.lng);
-
-    // 지도 중심 이동
-    mapInstanceRef.current.panTo(position);
-    mapInstanceRef.current.setZoom(15);
-
-    // 해당 마커의 인포윈도우 열기
-    const markerIndex = markersRef.current.findIndex(
-      (marker) => marker.getTitle() === selectedTourId
-    );
-    if (markerIndex !== -1 && infoWindowsRef.current[markerIndex]) {
-      // 다른 인포윈도우 닫기
-      infoWindowsRef.current.forEach((infoWindow) => infoWindow.close());
-      // 선택된 마커의 인포윈도우 열기
-      infoWindowsRef.current[markerIndex].open(
-        mapInstanceRef.current,
-        markersRef.current[markerIndex]
-      );
-    }
-  }, [selectedTourId, tours]);
-
   /**
    * 마커 업데이트 함수
    */
-  function updateMarkers(map: naver.maps.Map, tourList: TourItem[]) {
+  const updateMarkers = useCallback((map: naver.maps.Map, tourList: TourItem[]) => {
     // 기존 마커 및 인포윈도우 제거
     markersRef.current.forEach((marker) => marker.setMap(null));
     infoWindowsRef.current.forEach((infoWindow) => infoWindow.close());
@@ -426,7 +273,160 @@ export default function NaverMap({
         console.error(`마커 생성 실패 (${tour.contentid}):`, err);
       }
     });
-  }
+  }, [onTourSelect]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    let isMounted = true;
+
+    loadNaverMapsScript()
+      .then(() => {
+        if (!isMounted || !mapRef.current) return;
+
+        try {
+          // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
+          // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
+          let centerLat = 37.5665; // 서울 기본값
+          let centerLng = 126.9780;
+
+          // 유효한 좌표를 가진 첫 번째 관광지를 찾아 중심점으로 설정
+          for (const tour of tours) {
+            try {
+              if (tour.mapx && tour.mapy) {
+                const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+                centerLat = coords.lat;
+                centerLng = coords.lng;
+                break;
+              }
+            } catch {
+              continue;
+            }
+          }
+
+          // 지도 생성
+          const map = new window.naver.maps.Map(mapRef.current, {
+            center: new window.naver.maps.LatLng(centerLat, centerLng),
+            zoom: 13,
+            zoomControl: true,
+            zoomControlOptions: {
+              position: window.naver.maps.Position.TOP_RIGHT,
+            },
+          });
+
+          mapInstanceRef.current = map;
+
+          // 마커 생성
+          updateMarkers(map, tours);
+
+          // 모든 마커가 보이도록 지도 범위 조정
+          if (tours.length > 0) {
+            const bounds = new window.naver.maps.LatLngBounds();
+            let hasValidBounds = false;
+            tours.forEach((tour) => {
+              try {
+                if (tour.mapx && tour.mapy) {
+                  const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+                  bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+                  hasValidBounds = true;
+                }
+              } catch {
+                // ignore
+              }
+            });
+            if (hasValidBounds) {
+              map.fitBounds(bounds);
+            }
+          }
+
+          setIsLoading(false);
+        } catch (err) {
+          if (isMounted) {
+            setError(
+              err instanceof globalThis.Error
+                ? err
+                : new globalThis.Error("지도 초기화 중 오류가 발생했습니다.")
+            );
+            setIsLoading(false);
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(
+            err instanceof globalThis.Error
+              ? err
+              : new globalThis.Error("Naver Maps API 로드 실패")
+          );
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      // 마커 및 인포윈도우 정리
+      markersRef.current.forEach((marker) => marker.setMap(null));
+      infoWindowsRef.current.forEach((infoWindow) => infoWindow.close());
+      markersRef.current = [];
+      infoWindowsRef.current = [];
+    };
+  }, [tours, updateMarkers]); // 초기화는 한 번만, tours가 변경되면 아래 useEffect에서 처리
+
+  // 관광지 목록 변경 시 마커 업데이트
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    updateMarkers(mapInstanceRef.current, tours);
+
+    // 모든 마커가 보이도록 지도 범위 조정
+    if (tours.length > 0) {
+      const bounds = new window.naver.maps.LatLngBounds();
+      let hasValidBounds = false;
+      tours.forEach((tour) => {
+        try {
+          if (tour.mapx && tour.mapy) {
+            const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+            bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+            hasValidBounds = true;
+          }
+        } catch {
+          // ignore
+        }
+      });
+      if (hasValidBounds) {
+        mapInstanceRef.current.fitBounds(bounds);
+      }
+    }
+  }, [tours, updateMarkers]);
+
+  // 선택된 관광지로 지도 이동
+  useEffect(() => {
+    if (!mapInstanceRef.current || !selectedTourId) return;
+
+    const selectedTour = tours.find((tour) => tour.contentid === selectedTourId);
+    if (!selectedTour) return;
+
+    const coords = convertKATECToWGS84(selectedTour.mapx, selectedTour.mapy);
+    const position = new window.naver.maps.LatLng(coords.lat, coords.lng);
+
+    // 지도 중심 이동
+    mapInstanceRef.current.panTo(position);
+    mapInstanceRef.current.setZoom(15);
+
+    // 해당 마커의 인포윈도우 열기
+    const markerIndex = markersRef.current.findIndex(
+      (marker) => marker.getTitle() === selectedTourId
+    );
+    if (markerIndex !== -1 && infoWindowsRef.current[markerIndex]) {
+      // 다른 인포윈도우 닫기
+      infoWindowsRef.current.forEach((infoWindow) => infoWindow.close());
+      // 선택된 마커의 인포윈도우 열기
+      infoWindowsRef.current[markerIndex].open(
+        mapInstanceRef.current,
+        markersRef.current[markerIndex]
+      );
+    }
+  }, [selectedTourId, tours]);
 
   if (error) {
     return (

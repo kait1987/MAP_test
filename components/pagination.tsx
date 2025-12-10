@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  totalCount: number;
+
   className?: string;
 }
 
@@ -59,7 +59,7 @@ function getPageNumbers(currentPage: number, totalPages: number): number[] {
 export default function Pagination({
   currentPage,
   totalPages,
-  totalCount,
+
   className,
 }: PaginationProps) {
   const router = useRouter();

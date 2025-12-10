@@ -24,7 +24,7 @@ import {
   Car,
   Users,
   Activity,
-  Baby,
+
   Dog,
   Phone,
   MapPin,
