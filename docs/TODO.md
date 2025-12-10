@@ -145,48 +145,102 @@
     - [x] 반응형 컨테이너 설정
     ***
     - [x] app/page.tsx를 My Trip 홈페이지 기본 구조로 교체 (Server Component)
-    - [x] 반응형 컨테이너 설정 (max-w-7xl mx-auto px-4, 모바일/데스크톱 패딩)
+    - [x] 반응형 컨테이너 설정 (max-w-7xl mx-auto px-4 md:px-6, 모바일/데스크톱 패딩)
     - [x] 기본 섹션 구조 생성 (필터 영역, 목록 영역, 지도 영역 placeholder)
-    - [x] 임시 콘텐츠 추가 (제목, 빈 상태 메시지)
+    - [x] 반응형 그리드 레이아웃 구현 (모바일: 1열, 데스크톱: 2열 분할)
+    - [x] 지도 영역 데스크톱 전용 표시 (hidden lg:block)
+    - [x] 접근성 개선 (ARIA 라벨 추가: 필터 영역, 관광지 목록, 지도)
+    - [x] 페이지 제목 및 설명 추가 (h1, p 태그)
+    - [x] 임시 콘텐츠 추가 (각 섹션별 Phase 2 후반 구현 예정 안내)
     - [x] 레이아웃 검증 (Navbar, Footer 표시 확인, 반응형 확인, TypeScript/린터 에러 확인)
-- [ ] 관광지 목록 기능 (MVP 2.1)
-  - [ ] `components/tour-card.tsx` 생성
-    - [ ] 썸네일 이미지 (기본 이미지 fallback)
-    - [ ] 관광지명
-    - [ ] 주소 표시
-    - [ ] 관광 타입 뱃지
-    - [ ] 간단한 개요 (1-2줄)
-    - [ ] 호버 효과 (scale, shadow)
-    - [ ] 클릭 시 상세페이지 이동
-  - [ ] `components/tour-list.tsx` 생성
-    - [ ] 그리드 레이아웃 (반응형)
-    - [ ] 카드 목록 표시
-    - [ ] 로딩 상태 (Skeleton UI)
-    - [ ] 빈 상태 처리
-  - [ ] API 연동
-    - [ ] `getAreaBasedList()` 호출
-    - [ ] 데이터 파싱 및 표시
-    - [ ] 에러 처리
-- [ ] 필터 기능
-  - [ ] `components/tour-filters.tsx` 생성
-    - [ ] 지역 필터 (시/도 선택)
-      - [ ] `getAreaCode()` API로 지역 목록 로드
-      - [ ] 드롭다운 또는 버튼 그룹
-      - [ ] "전체" 옵션
-    - [ ] 관광 타입 필터
-      - [ ] 관광지(12), 문화시설(14), 축제/행사(15), 여행코스(25), 레포츠(28), 숙박(32), 쇼핑(38), 음식점(39)
-      - [ ] 다중 선택 가능
-      - [ ] "전체" 옵션
+- [x] 관광지 목록 기능 (MVP 2.1)
+  - [x] `components/tour-card.tsx` 생성
+    - [x] 썸네일 이미지 (기본 이미지 fallback)
+    - [x] 관광지명
+    - [x] 주소 표시
+    - [x] 관광 타입 뱃지
+    - [ ] 간단한 개요 (1-2줄) - areaBasedList2 API 응답에 overview 필드 없음 (상세페이지에서만 제공)
+    - [x] 호버 효과 (scale, shadow)
+    - [x] 클릭 시 상세페이지 이동
+  - [x] `components/tour-list.tsx` 생성
+    - [x] 그리드 레이아웃 (반응형)
+    - [x] 카드 목록 표시
+    - [x] 로딩 상태 (Skeleton UI)
+    - [x] 빈 상태 처리
+  - [x] API 연동
+    - [x] `getAreaBasedList()` 호출
+    - [x] 데이터 파싱 및 표시
+    - [x] 에러 처리
+    ***
+    - [x] components/tour-card.tsx 생성 (Next.js Image 컴포넌트 사용, 16:9 aspect-ratio, lazy loading)
+    - [x] 기본 이미지 fallback 처리 (firstimage → firstimage2 → placeholder 이미지)
+    - [x] 관광 타입 뱃지 구현 (getContentTypeName 사용, 타입별 색상 구분, 8가지 타입별 색상)
+    - [x] 관광지명 표시 (line-clamp-2로 2줄 제한, 호버 시 primary 색상)
+    - [x] 주소 표시 (MapPin 아이콘, addr1/addr2, line-clamp로 텍스트 오버플로우 처리)
+    - [x] 간단한 개요 미구현 (areaBasedList2 API 응답에 overview 필드 없음, 상세페이지에서만 제공)
+    - [x] 호버 효과 구현 (scale-[1.02], shadow-xl, transition-all duration-300, 이미지 scale-105)
+    - [x] Link 컴포넌트로 상세페이지 이동 (/places/[contentId], aria-label 추가)
+    - [x] components/tour-list.tsx 생성 (그리드 레이아웃: 모바일 1열, 태블릿 2열, 데스크톱 3열)
+    - [x] 로딩 상태 구현 (Skeleton UI, 9개 스켈레톤 카드)
+    - [x] 빈 상태 처리 (Inbox 아이콘, 안내 메시지)
+    - [x] 에러 상태 처리 (Error 컴포넌트 사용)
+    - [x] app/page.tsx에 API 연동 (getAreaBasedList 호출, 기본값: 서울, 관광지, 12개, 최신순)
+    - [x] Suspense로 로딩 상태 관리
+    - [x] try-catch로 에러 처리
+    - [x] next.config.ts에 한국관광공사 이미지 도메인 추가 (tong.visitkorea.or.kr, www.visitkorea.or.kr)
+    - [x] 접근성 개선 (ARIA 라벨, role 속성)
+    - [x] 반응형 디자인 확인 (모바일/태블릿/데스크톱)
+- [x] 필터 기능
+  - [x] `components/tour-filters.tsx` 생성
+    - [x] 지역 필터 (시/도 선택)
+      - [x] `getAreaCode()` API로 지역 목록 로드
+      - [x] 드롭다운 또는 버튼 그룹
+      - [x] "전체" 옵션
+    - [x] 관광 타입 필터
+      - [x] 관광지(12), 문화시설(14), 축제/행사(15), 여행코스(25), 레포츠(28), 숙박(32), 쇼핑(38), 음식점(39)
+      - [x] 단일 선택 (Select 컴포넌트 사용)
+      - [x] "전체" 옵션
     - [ ] 반려동물 동반 가능 필터 (MVP 2.5)
       - [ ] 토글 버튼
       - [ ] 크기별 필터 (소형, 중형, 대형)
-    - [ ] 정렬 옵션
-      - [ ] 최신순 (modifiedtime)
-      - [ ] 이름순 (가나다)
-    - [ ] 필터 상태 관리 (URL 쿼리 파라미터 또는 상태)
-  - [ ] 필터 적용 로직
-    - [ ] 필터 변경 시 API 재호출
-    - [ ] 필터 조합 처리
+    - [x] 정렬 옵션
+      - [x] 최신순 (modifiedtime, arrange: "C")
+      - [x] 이름순 (가나다, arrange: "A")
+    - [x] 필터 상태 관리 (URL 쿼리 파라미터 또는 상태)
+  - [x] 필터 적용 로직
+    - [x] 필터 변경 시 API 재호출
+    - [x] 필터 조합 처리
+    ***
+    - [x] lib/types/filter.ts 생성 (FilterParams 인터페이스, parseFilterParams 함수, DEFAULT_FILTERS 상수)
+    - [x] shadcn/ui Select 컴포넌트 설치
+    - [x] components/tour-filters.tsx 생성 (Client Component)
+      - [x] 지역 필터 구현 (Select 컴포넌트, getAreaCode API 연동, "전체" 옵션)
+      - [x] 관광 타입 필터 구현 (CONTENT_TYPE 상수 활용, 8가지 타입, "전체" 옵션)
+      - [x] 정렬 옵션 구현 (최신순/이름순, Select 컴포넌트)
+      - [x] URL searchParams를 통한 필터 상태 관리 (useSearchParams, useRouter 훅)
+      - [x] 필터 변경 시 router.push()로 URL 업데이트
+      - [x] 필터 초기화 버튼 (활성 필터 있을 때만 표시)
+      - [x] 반응형 디자인 (모바일: 세로 배치, 데스크톱: 가로 배치)
+      - [x] 접근성 (ARIA 라벨, 아이콘 aria-hidden)
+    - [x] app/page.tsx 수정
+      - [x] searchParams prop 추가 (Next.js App Router)
+      - [x] parseFilterParams로 필터 파라미터 추출
+      - [x] TourListData 함수에 필터 파라미터 전달
+      - [x] getAreaBasedList() 호출 시 필터 파라미터 적용
+      - [x] 기본값 설정 (areaCode: "1", contentTypeId: "12", arrange: "C")
+      - [x] AreaListData 함수 생성 (getAreaCode API 호출)
+      - [x] 필터 영역에 TourFilters 컴포넌트 통합
+      - [x] Suspense 경계 설정 (필터와 목록 독립적 로딩)
+      - [x] FiltersSkeleton 컴포넌트 생성 (로딩 상태)
+    - [x] TypeScript 컴파일 에러 없음 확인
+    - [x] 린터 에러 없음 확인
+    - [x] 필터 변경 시 pageNo 자동 리셋 구현 확인
+    - [x] 필터 조합 동작 확인 (지역 + 타입 + 정렬 동시 적용 가능)
+    - [x] URL searchParams 동기화 확인 (필터 변경 시 URL 업데이트)
+    - [x] 기본값 동작 확인 (필터 없을 때 서울, 관광지, 최신순)
+    - [x] 필터 초기화 버튼 조건부 표시 확인 (활성 필터 있을 때만)
+    - [x] Server Component와 Client Component 분리 확인
+    - [x] Suspense 경계 독립성 확인 (필터와 목록 각각 로딩)
 - [ ] 검색 기능 (MVP 2.3)
   - [ ] `components/tour-search.tsx` 생성
     - [ ] 검색창 UI (헤더 또는 메인 영역)
