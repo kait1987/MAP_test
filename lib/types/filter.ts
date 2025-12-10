@@ -25,6 +25,10 @@ export interface FilterParams {
   numOfRows?: number;
   /** 검색 키워드 */
   keyword?: string;
+  /** 반려동물 동반 가능 여부 */
+  petAllowed?: boolean;
+  /** 반려동물 크기 필터 - "small" (소형), "medium" (중형), "large" (대형), "all" (전체) */
+  petSize?: "small" | "medium" | "large" | "all";
 }
 
 /**
@@ -46,6 +50,8 @@ export function parseFilterParams(searchParams: {
   pageNo?: string | string[];
   numOfRows?: string | string[];
   keyword?: string | string[];
+  petAllowed?: string | string[];
+  petSize?: string | string[];
 }): FilterParams {
   const areaCode = Array.isArray(searchParams.areaCode)
     ? searchParams.areaCode[0]
@@ -65,6 +71,12 @@ export function parseFilterParams(searchParams: {
   const keyword = Array.isArray(searchParams.keyword)
     ? searchParams.keyword[0]
     : searchParams.keyword;
+  const petAllowed = Array.isArray(searchParams.petAllowed)
+    ? searchParams.petAllowed[0]
+    : searchParams.petAllowed;
+  const petSize = Array.isArray(searchParams.petSize)
+    ? searchParams.petSize[0]
+    : searchParams.petSize;
 
   return {
     areaCode: areaCode || undefined,
@@ -73,6 +85,10 @@ export function parseFilterParams(searchParams: {
     pageNo: pageNo ? parseInt(pageNo, 10) : DEFAULT_FILTERS.pageNo,
     numOfRows: numOfRows ? parseInt(numOfRows, 10) : DEFAULT_FILTERS.numOfRows,
     keyword: keyword && keyword.trim() ? keyword.trim() : undefined,
+    petAllowed: petAllowed === "true" ? true : petAllowed === "false" ? false : undefined,
+    petSize: petSize === "small" || petSize === "medium" || petSize === "large" || petSize === "all"
+      ? petSize
+      : undefined,
   };
 }
 

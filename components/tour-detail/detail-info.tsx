@@ -220,7 +220,7 @@ export default function DetailInfo({ detail, className }: DetailInfoProps) {
         <div className="mb-4">
           <a
             href={`tel:${detail.tel.trim()}`}
-            className="flex items-center gap-2 text-sm md:text-base text-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-sm md:text-base text-foreground hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2 py-1 -mx-2 -my-1"
             aria-label={`${detail.tel}로 전화하기`}
           >
             <Phone className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
@@ -236,7 +236,7 @@ export default function DetailInfo({ detail, className }: DetailInfoProps) {
             href={homepageUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm md:text-base text-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-sm md:text-base text-foreground hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2 py-1 -mx-2 -my-1"
             aria-label="홈페이지 열기 (새 탭)"
           >
             <ExternalLink className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />

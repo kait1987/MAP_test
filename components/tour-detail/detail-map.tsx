@@ -370,14 +370,14 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
       <div className="relative">
         {isLoading && (
           <div className="absolute inset-0 z-10">
-            <Skeleton className="w-full h-[400px] md:h-[500px] rounded-lg" />
+            <Skeleton className="w-full h-[400px] md:h-[600px] rounded-lg" />
           </div>
         )}
         <div
           ref={mapRef}
           className={cn(
             "w-full rounded-lg border bg-card",
-            isLoading ? "h-0 opacity-0" : "h-[400px] md:h-[500px] opacity-100 transition-opacity duration-300"
+            isLoading ? "h-0 opacity-0" : "h-[400px] md:h-[600px] opacity-100 transition-opacity duration-300"
           )}
           aria-label="네이버 지도"
         />

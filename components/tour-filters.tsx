@@ -26,6 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface TourFiltersProps {
@@ -63,6 +70,8 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
   const currentAreaCode = searchParams.get("areaCode") || undefined;
   const currentContentTypeId = searchParams.get("contentTypeId") || undefined;
   const currentArrange = (searchParams.get("arrange") as "A" | "C" | null) || "C";
+  const currentPetAllowed = searchParams.get("petAllowed") === "true";
+  const currentPetSize = (searchParams.get("petSize") as "small" | "medium" | "large" | "all" | null) || undefined;
 
   /**
    * 필터 변경 핸들러
@@ -91,7 +100,7 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
   };
 
   // 필터가 적용되어 있는지 확인
-  const hasActiveFilters = currentAreaCode || currentContentTypeId || currentArrange !== "C";
+  const hasActiveFilters = currentAreaCode || currentContentTypeId || currentArrange !== "C" || currentPetAllowed;
 
   return (
     <section
@@ -168,6 +177,54 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* 반려동물 필터 */}
+          <div className="flex items-center gap-2">
+            <span className="text-lg" aria-hidden="true">🐾</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={currentPetAllowed}
+                      onCheckedChange={(checked) => {
+                        handleFilterChange("petAllowed", checked ? "true" : undefined);
+                        // 토글이 꺼지면 크기 필터도 제거
+                        if (!checked) {
+                          handleFilterChange("petSize", undefined);
+                        }
+                      }}
+                      disabled
+                      aria-label="반려동물 동반 가능 필터"
+                    />
+                    <span className="text-sm text-muted-foreground">반려동물 동반</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>상세페이지에서 반려동물 정보를 확인할 수 있습니다</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {currentPetAllowed && (
+              <Select
+                value={currentPetSize || "all"}
+                onValueChange={(value) =>
+                  handleFilterChange("petSize", value === "all" ? undefined : value)
+                }
+                disabled
+              >
+                <SelectTrigger className="w-[100px] md:w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="small">소형</SelectItem>
+                  <SelectItem value="medium">중형</SelectItem>
+                  <SelectItem value="large">대형</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 

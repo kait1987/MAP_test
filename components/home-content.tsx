@@ -80,7 +80,7 @@ export default function HomeContent({
         </section>
 
         {/* 지도 영역 (우측) */}
-        <section className="lg:col-span-1" aria-label="지도">
+        <section className="lg:col-span-1 min-h-[600px]" aria-label="지도">
           <NaverMap
             tours={tours}
             selectedTourId={selectedTourId}

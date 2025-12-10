@@ -18,12 +18,14 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Error } from "@/components/ui/error";
-import { getDetailCommon, getDetailIntro, getDetailImage } from "@/lib/api/tour-api";
-import type { TourDetail, TourIntro, TourImage } from "@/lib/types/tour";
+import { getDetailCommon, getDetailIntro, getDetailImage, getDetailPetTour, getAreaBasedList } from "@/lib/api/tour-api";
+import type { TourDetail, TourIntro, TourImage, PetTourInfo, TourItem } from "@/lib/types/tour";
 import DetailInfo from "@/components/tour-detail/detail-info";
 import DetailIntro from "@/components/tour-detail/detail-intro";
 import DetailGallery from "@/components/tour-detail/detail-gallery";
 import DetailMap from "@/components/tour-detail/detail-map";
+import DetailPetTour from "@/components/tour-detail/detail-pet-tour";
+import DetailRecommendations from "@/components/tour-detail/detail-recommendations";
 import ShareButton from "@/components/tour-detail/share-button";
 import BookmarkButton from "@/components/bookmarks/bookmark-button";
 
@@ -55,7 +57,37 @@ async function TourDetailData({ contentId }: { contentId: string }) {
       // 이미지가 없어도 상세페이지는 표시 가능
     }
     
-    return <TourDetailContent detail={detail} intro={intro} images={images} />;
+    // 반려동물 정보도 선택 사항이므로 에러가 발생해도 계속 진행
+    let petInfo: PetTourInfo | null = null;
+    try {
+      petInfo = await getDetailPetTour({ contentId: detail.contentid });
+    } catch (petError) {
+      console.warn("반려동물 정보 로드 실패 (계속 진행):", petError);
+      // 반려동물 정보가 없어도 상세페이지는 표시 가능
+    }
+    
+    // 추천 관광지도 선택 사항이므로 에러가 발생해도 계속 진행
+    let recommendations: TourItem[] = [];
+    try {
+      // 같은 지역 + 같은 타입의 관광지 조회 (현재 관광지 제외 후 6개 표시를 위해 7개 조회)
+      const recommendationResult = await getAreaBasedList({
+        areaCode: detail.areacode || "1", // 지역코드가 없으면 서울 기본값
+        contentTypeId: detail.contenttypeid,
+        numOfRows: 7, // 현재 관광지 제외 후 6개 표시
+        pageNo: 1,
+        arrange: "C", // 최신순
+      });
+      
+      // 현재 관광지 제외
+      recommendations = recommendationResult.items.filter(
+        (tour) => tour.contentid !== detail.contentid
+      ).slice(0, 6); // 최대 6개
+    } catch (recommendError) {
+      console.warn("추천 관광지 로드 실패 (계속 진행):", recommendError);
+      // 추천 관광지가 없어도 상세페이지는 표시 가능
+    }
+    
+    return <TourDetailContent detail={detail} intro={intro} images={images} petInfo={petInfo} recommendations={recommendations} />;
   } catch (err: unknown) {
     console.error("관광지 상세 정보 로드 실패:", err);
     
@@ -100,10 +132,14 @@ function TourDetailContent({
   detail,
   intro,
   images,
+  petInfo,
+  recommendations,
 }: {
   detail: TourDetail;
   intro: TourIntro | null;
   images: TourImage[];
+  petInfo: PetTourInfo | null;
+  recommendations: TourItem[];
 }) {
   return (
     <div className="space-y-8">
@@ -113,11 +149,22 @@ function TourDetailContent({
       {/* 운영 정보 섹션 */}
       {intro && <DetailIntro intro={intro} />}
 
+      {/* 반려동물 정보 섹션 */}
+      {petInfo && <DetailPetTour petInfo={petInfo} />}
+
       {/* 이미지 갤러리 섹션 */}
       {images.length > 0 && <DetailGallery images={images} />}
 
       {/* 지도 섹션 */}
-      <DetailMap detail={detail} />
+      {detail.mapx && detail.mapy && <DetailMap detail={detail} />}
+
+      {/* 추천 관광지 섹션 */}
+      {recommendations.length > 0 && (
+        <DetailRecommendations
+          recommendations={recommendations}
+          currentContentId={detail.contentid}
+        />
+      )}
     </div>
   );
 }
@@ -258,7 +305,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
         <main className="min-h-[calc(100vh-80px)] py-8">
           <div className="w-full max-w-7xl mx-auto px-4 md:px-6">
             {/* 뒤로가기 버튼 및 공유/북마크 버튼 */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 gap-2">
               <BackButton />
               <div className="flex items-center gap-2">
                 <BookmarkButton contentId={contentId.trim()} variant="outline" size="sm" />

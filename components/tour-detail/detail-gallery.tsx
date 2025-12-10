@@ -139,7 +139,7 @@ export default function DetailGallery({
               <Button
                 variant="secondary"
                 size="icon"
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none h-11 w-11 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50"
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePrevious();
@@ -155,7 +155,7 @@ export default function DetailGallery({
               <Button
                 variant="secondary"
                 size="icon"
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none h-11 w-11 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNext();
@@ -175,7 +175,7 @@ export default function DetailGallery({
               <button
                 key={image.serialnum || `image-${index}`}
                 className={cn(
-                  "relative aspect-video rounded-lg overflow-hidden bg-muted transition-all duration-300",
+                  "relative aspect-video rounded-lg overflow-hidden bg-muted transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                   currentIndex === index
                     ? "ring-2 ring-primary ring-offset-2"
                     : "hover:scale-105 hover:shadow-md"
@@ -213,7 +213,7 @@ export default function DetailGallery({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-50 text-white hover:bg-white/20"
+            className="absolute top-4 right-4 z-50 text-white hover:bg-white/20 h-11 w-11 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/95"
             onClick={() => setIsModalOpen(false)}
             aria-label="닫기"
           >
@@ -242,7 +242,7 @@ export default function DetailGallery({
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none h-12 w-12"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none h-12 w-12 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/95"
                   onClick={handleModalPrevious}
                   aria-label="이전 이미지"
                 >
@@ -255,7 +255,7 @@ export default function DetailGallery({
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none h-12 w-12"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-none h-12 w-12 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/95"
                   onClick={handleModalNext}
                   aria-label="다음 이미지"
                 >

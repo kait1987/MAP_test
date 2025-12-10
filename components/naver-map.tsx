@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { TourItem } from "@/lib/types/tour";
 import { convertKATECToWGS84 } from "@/lib/utils/coordinate";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Error } from "@/components/ui/error";
@@ -186,14 +187,22 @@ export default function NaverMap({
 
         try {
           // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
+          // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
           let centerLat = 37.5665; // 서울 기본값
           let centerLng = 126.9780;
 
-          if (tours.length > 0) {
-            const firstTour = tours[0];
-            const coords = convertKATECToWGS84(firstTour.mapx, firstTour.mapy);
-            centerLat = coords.lat;
-            centerLng = coords.lng;
+          // 유효한 좌표를 가진 첫 번째 관광지를 찾아 중심점으로 설정
+          for (const tour of tours) {
+            try {
+              if (tour.mapx && tour.mapy) {
+                const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+                centerLat = coords.lat;
+                centerLng = coords.lng;
+                break;
+              }
+            } catch (e) {
+              continue;
+            }
           }
 
           // 지도 생성
@@ -214,11 +223,21 @@ export default function NaverMap({
           // 모든 마커가 보이도록 지도 범위 조정
           if (tours.length > 0) {
             const bounds = new window.naver.maps.LatLngBounds();
+            let hasValidBounds = false;
             tours.forEach((tour) => {
-              const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-              bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+              try {
+                if (tour.mapx && tour.mapy) {
+                  const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+                  bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+                  hasValidBounds = true;
+                }
+              } catch (e) {
+                // ignore
+              }
             });
-            map.fitBounds(bounds);
+            if (hasValidBounds) {
+              map.fitBounds(bounds);
+            }
           }
 
           setIsLoading(false);
@@ -263,11 +282,21 @@ export default function NaverMap({
     // 모든 마커가 보이도록 지도 범위 조정
     if (tours.length > 0) {
       const bounds = new window.naver.maps.LatLngBounds();
+      let hasValidBounds = false;
       tours.forEach((tour) => {
-        const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-        bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+        try {
+          if (tour.mapx && tour.mapy) {
+            const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+            bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+            hasValidBounds = true;
+          }
+        } catch (e) {
+          // ignore
+        }
       });
-      mapInstanceRef.current.fitBounds(bounds);
+      if (hasValidBounds) {
+        mapInstanceRef.current.fitBounds(bounds);
+      }
     }
   }, [tours]);
 
@@ -313,6 +342,7 @@ export default function NaverMap({
     // 새 마커 생성
     tourList.forEach((tour) => {
       try {
+        if (!tour.mapx || !tour.mapy) return;
         const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
         const position = new window.naver.maps.LatLng(coords.lat, coords.lng);
 
@@ -398,7 +428,7 @@ export default function NaverMap({
 
   if (error) {
     return (
-      <div className={className}>
+      <div className={cn(className, "min-h-[600px]")}>
         <Error
           type="api"
           message={error.message}
@@ -414,16 +444,11 @@ export default function NaverMap({
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className={className}>
-        <Skeleton className="w-full h-[600px] rounded-lg" />
-      </div>
-    );
-  }
-
   return (
-    <div className={className}>
+    <div className={cn(className, "relative")}>
+      {isLoading && (
+        <Skeleton className="absolute inset-0 z-10 w-full h-full rounded-lg" />
+      )}
       <div
         ref={mapRef}
         className="w-full h-[400px] md:h-[500px] lg:h-[600px] rounded-lg border bg-card"

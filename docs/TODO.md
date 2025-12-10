@@ -200,9 +200,29 @@
       - [x] 관광지(12), 문화시설(14), 축제/행사(15), 여행코스(25), 레포츠(28), 숙박(32), 쇼핑(38), 음식점(39)
       - [x] 단일 선택 (Select 컴포넌트 사용)
       - [x] "전체" 옵션
-    - [ ] 반려동물 동반 가능 필터 (MVP 2.5)
-      - [ ] 토글 버튼
-      - [ ] 크기별 필터 (소형, 중형, 대형)
+    - [x] 반려동물 동반 가능 필터 (MVP 2.5)
+      - [x] 토글 버튼
+      - [x] 크기별 필터 (소형, 중형, 대형)
+      ***
+      - [x] lib/types/filter.ts 수정 (FilterParams에 petAllowed, petSize 필드 추가, parseFilterParams 함수 업데이트)
+      - [x] shadcn/ui Switch 컴포넌트 설치
+      - [x] shadcn/ui Tooltip 컴포넌트 설치
+      - [x] components/tour-filters.tsx 수정
+        - [x] 반려동물 필터 섹션 추가 (🐾 아이콘, Switch 토글 버튼)
+        - [x] 크기별 필터 Select 추가 (소형, 중형, 대형, 전체)
+        - [x] 비활성화 상태 (disabled)로 표시
+        - [x] 툴팁으로 안내 메시지 제공 ("상세페이지에서 반려동물 정보를 확인할 수 있습니다")
+        - [x] URL searchParams 상태 관리 (petAllowed, petSize)
+        - [x] 필터 변경 시 URL 업데이트 (실제 필터링은 미구현이지만 URL은 업데이트)
+        - [x] 반응형 디자인 (모바일/데스크톱)
+        - [x] 접근성 (ARIA 라벨, disabled 상태 명시)
+      - [x] components/tour-card.tsx 수정
+        - [x] 반려동물 뱃지 UI 준비 (주석 처리, 향후 API 연동 시 표시)
+        - [x] 뱃지 디자인 (🐾 이모지, 반투명 배경, absolute positioning)
+      - [x] 필터 초기화 로직 확인 (router.push("/")로 모든 파라미터 자동 제거)
+      - [x] app/page.tsx 확인 (반려동물 필터 파라미터는 읽히지만 API 호출 시 전달하지 않음)
+      - [x] TypeScript 컴파일 에러 없음 확인
+      - [x] 린터 에러 없음 확인
     - [x] 정렬 옵션
       - [x] 최신순 (modifiedtime, arrange: "C")
       - [x] 이름순 (가나다, arrange: "A")
@@ -773,24 +793,133 @@
       - [x] TypeScript 컴파일 에러 없음 확인
       - [x] 린터 에러 없음 확인
       - [x] 북마크 버튼 정상 렌더링 확인
-- [ ] 반려동물 정보 섹션 (MVP 2.5)
-  - [ ] `components/tour-detail/detail-pet-tour.tsx` 생성
-    - [ ] `getDetailPetTour()` API 연동
-    - [ ] 반려동물 동반 가능 여부 표시
-    - [ ] 반려동물 크기 제한 정보
-    - [ ] 반려동물 입장 가능 장소 (실내/실외)
-    - [ ] 반려동물 동반 추가 요금
-    - [ ] 반려동물 전용 시설 정보
-    - [ ] 아이콘 및 뱃지 디자인 (🐾)
-    - [ ] 주의사항 강조 표시
-- [ ] 추천 관광지 섹션 (선택 사항)
-  - [ ] 같은 지역 또는 타입의 다른 관광지 추천
-  - [ ] 카드 형태로 표시
-- [ ] 최종 통합 및 스타일링
-  - [ ] 모든 섹션 통합
-  - [ ] 반응형 디자인 확인
-  - [ ] 모바일 최적화
-  - [ ] 접근성 확인 (ARIA 라벨, 키보드 네비게이션)
+- [x] 반려동물 정보 섹션 (MVP 2.5)
+  - [x] `components/tour-detail/detail-pet-tour.tsx` 생성
+    - [x] `getDetailPetTour()` API 연동
+    - [x] 반려동물 동반 가능 여부 표시
+    - [x] 반려동물 크기 제한 정보
+    - [x] 반려동물 입장 가능 장소 (실내/실외)
+    - [x] 반려동물 동반 추가 요금
+    - [x] 반려동물 전용 시설 정보
+    - [x] 아이콘 및 뱃지 디자인 (🐾)
+    - [x] 주의사항 강조 표시
+    ***
+    - [x] PetTourInfo 타입 확인 및 보완 (lib/types/tour.ts, PRD 2.5와 일치 확인)
+    - [x] components/tour-detail/detail-pet-tour.tsx 생성 (Client Component)
+      - [x] 섹션 레이아웃 (카드 스타일, 반응형 디자인)
+      - [x] 반려동물 동반 가능 여부 표시 (Dog 아이콘, 🐾 이모지)
+      - [x] 반려동물 크기 제한 정보 표시 (Ruler 아이콘, 크기별 뱃지 색상 구분)
+      - [x] 입장 가능 장소 표시 (MapPin 아이콘)
+      - [x] 추가 요금 표시 (DollarSign 아이콘)
+      - [x] 주차장 정보 표시 (Car 아이콘)
+      - [x] 기타 반려동물 정보 표시 (Info 아이콘, 주의사항 강조)
+      - [x] 그리드 레이아웃 (모바일: 1열, 데스크톱: 2열)
+      - [x] 아이콘 + 텍스트 조합
+      - [x] 정보 없는 항목 숨김 처리 (hasValue 함수)
+      - [x] 주의사항 강조 표시 (AlertTriangle 아이콘, 경고 색상)
+      - [x] 조건부 렌더링 (정보 없으면 섹션 숨김)
+    - [x] app/places/[contentId]/page.tsx 수정
+      - [x] getDetailPetTour API 함수 import 추가
+      - [x] PetTourInfo 타입 import 추가
+      - [x] TourDetailData 함수에서 getDetailPetTour() API 호출 추가
+      - [x] 에러 처리 (선택 사항이므로 null 처리, console.warn)
+      - [x] TourDetailContent에 petInfo prop 추가
+      - [x] DetailPetTour 컴포넌트 import 및 사용
+      - [x] 조건부 렌더링 (petInfo가 있을 때만 표시)
+      - [x] 섹션 순서: 기본 정보 → 운영 정보 → 반려동물 정보 → 이미지 갤러리 → 지도
+    - [x] 아이콘 및 뱃지 디자인 구현
+      - [x] 반려동물 동반 가능 아이콘 (🐾 이모지, Dog 아이콘)
+      - [x] 크기별 뱃지 색상 구분 (소형: 초록, 중형: 파랑, 대형: 주황)
+      - [x] 주의사항 강조 (AlertTriangle 아이콘, 경고 색상)
+    - [x] 에러 처리 및 검증
+      - [x] API 호출 실패 시 에러 처리 (null 반환, 선택 사항)
+      - [x] 데이터 없을 경우 섹션 숨김 처리
+      - [x] TypeScript 컴파일 에러 없음 확인
+      - [x] 린터 에러 없음 확인
+- [x] 추천 관광지 섹션 (선택 사항)
+  - [x] 같은 지역 또는 타입의 다른 관광지 추천
+  - [x] 카드 형태로 표시
+  ***
+  - [x] components/tour-detail/detail-recommendations.tsx 생성 (Client Component)
+    - [x] 섹션 레이아웃 (카드 스타일, 반응형 디자인)
+    - [x] 섹션 제목: "추천 관광지" (Sparkles 아이콘)
+    - [x] 부제목: "같은 지역의 다른 관광지를 확인해보세요"
+    - [x] 추천 관광지 그리드 레이아웃 (모바일: 1열, 태블릿: 2열, 데스크톱: 3열)
+    - [x] TourCard 컴포넌트 재사용
+    - [x] 현재 관광지 제외 로직 (contentid 필터링)
+    - [x] 최대 6개 표시 (slice(0, 6))
+    - [x] 조건부 렌더링 (추천 관광지가 없으면 섹션 숨김)
+    - [x] 접근성 (ARIA 라벨, role 속성)
+  - [x] app/places/[contentId]/page.tsx 수정
+    - [x] getAreaBasedList API 함수 import 추가
+    - [x] TourItem 타입 import 추가
+    - [x] TourDetailData 함수에서 추천 관광지 데이터 로드
+      - [x] getAreaBasedList() API 호출 (같은 지역 + 같은 타입)
+      - [x] 현재 관광지의 areacode, contentTypeId 사용
+      - [x] numOfRows: 7 (현재 관광지 제외 후 6개 표시)
+      - [x] pageNo: 1, arrange: "C" (최신순)
+    - [x] 현재 관광지 제외 로직 (API 응답에서 contentid 필터링)
+    - [x] 에러 처리 (선택 사항이므로 빈 배열 반환, console.warn)
+    - [x] TourDetailContent에 recommendations prop 추가
+    - [x] DetailRecommendations 컴포넌트 import 및 사용
+    - [x] 조건부 렌더링 (recommendations.length > 0일 때만 표시)
+    - [x] 섹션 순서: 기본 정보 → 운영 정보 → 반려동물 정보 → 이미지 갤러리 → 지도 → 추천 관광지
+  - [x] UI/UX 개선
+    - [x] 섹션 제목 스타일링 (Sparkles 아이콘, 부제목)
+    - [x] 카드 레이아웃 (그리드, 기존 TourCard 재사용)
+    - [x] 반응형 디자인 (모바일/태블릿/데스크톱)
+  - [x] 에러 처리 및 검증
+    - [x] API 호출 실패 시 에러 처리 (빈 배열 반환, 선택 사항)
+    - [x] 데이터 없을 경우 섹션 숨김 처리
+    - [x] 현재 관광지 제외 확인
+    - [x] TypeScript 컴파일 에러 없음 확인
+    - [x] 린터 에러 없음 확인
+- [x] 최종 통합 및 스타일링
+  - [x] 모든 섹션 통합
+  - [x] 반응형 디자인 확인
+  - [x] 모바일 최적화
+  - [x] 접근성 확인 (ARIA 라벨, 키보드 네비게이션)
+  ***
+  - [x] 모든 섹션 통합 확인 및 검증
+    - [x] 섹션 순서 확인 (기본 정보 → 운영 정보 → 반려동물 정보 → 이미지 갤러리 → 지도 → 추천 관광지)
+    - [x] 조건부 렌더링 확인 (각 섹션의 데이터 존재 여부에 따른 표시/숨김)
+    - [x] 섹션 간 간격 확인 (space-y-8로 일관된 간격 유지)
+    - [x] 데이터 흐름 확인 (TourDetailData에서 모든 데이터 로드, 에러 처리)
+  - [x] 반응형 디자인 확인 및 개선
+    - [x] 페이지 레이아웃 확인 (max-w-7xl mx-auto px-4 md:px-6)
+    - [x] 각 섹션의 반응형 디자인 확인 (모바일/태블릿/데스크톱)
+    - [x] 버튼 레이아웃 확인 (뒤로가기/공유/북마크 버튼 모바일 배치)
+    - [x] app/places/[contentId]/page.tsx 수정 (버튼 레이아웃에 gap-2 추가하여 모바일 간격 개선)
+    - [x] 지도 높이 조정 (모바일 400px, 데스크톱 600px로 PRD 요구사항 반영)
+    - [x] components/tour-detail/detail-map.tsx 수정 (지도 높이 h-[400px] md:h-[600px]로 변경)
+  - [x] 모바일 최적화
+    - [x] 버튼 터치 영역 확보 (최소 44x44px, 이미지 갤러리 버튼 h-11 w-11, 모달 버튼 h-12 w-12)
+    - [x] components/tour-detail/detail-gallery.tsx 수정 (이미지 갤러리 슬라이드 버튼 h-11 w-11로 확대, 모달 버튼 h-12 w-12 유지)
+    - [x] 이미지 최적화 확인 (Next.js Image 컴포넌트, sizes 속성, lazy loading)
+    - [x] 링크 포커스 스타일 추가 (focus:ring-2 focus:ring-primary)
+    - [x] components/tour-detail/detail-info.tsx 수정 (전화번호, 홈페이지 링크에 포커스 스타일 추가)
+  - [x] 접근성 확인 및 개선
+    - [x] ARIA 라벨 확인 (모든 섹션, 버튼, 링크에 적절한 aria-label)
+    - [x] 키보드 네비게이션 개선 (포커스 스타일 추가, focus:ring-2 focus:ring-primary)
+    - [x] components/tour-detail/detail-gallery.tsx 수정 (이미지 갤러리 버튼에 focus:ring-2 focus:ring-white 포커스 스타일 추가)
+    - [x] 이미지 갤러리 키보드 네비게이션 (화살표 키, ESC 키 지원)
+    - [x] 썸네일 버튼 포커스 스타일 추가
+    - [x] components/tour-detail/detail-gallery.tsx 수정 (썸네일 버튼에 focus:outline-none focus:ring-2 focus:ring-primary 포커스 스타일 추가)
+    - [x] 링크 포커스 스타일 추가 (전화번호, 홈페이지 링크)
+    - [x] components/tour-detail/detail-info.tsx 수정 (전화번호, 홈페이지 링크에 focus:outline-none focus:ring-2 focus:ring-primary 포커스 스타일 추가)
+  - [x] 스타일 일관성 확인
+    - [x] 카드 스타일 일관성 확인 (모든 섹션이 rounded-lg border bg-card p-6 md:p-8 사용)
+    - [x] 제목 스타일 일관성 확인 (모든 섹션이 text-2xl font-bold 사용)
+    - [x] 색상 스킴 확인 (다크/라이트 모드 지원)
+    - [x] 간격 일관성 확인 (섹션 간 space-y-8, 섹션 내부 간격)
+  - [x] 성능 최적화 확인
+    - [x] 이미지 최적화 확인 (Next.js Image 컴포넌트, priority 속성, lazy loading)
+    - [x] 코드 분할 확인 (Client Component와 Server Component 적절히 분리)
+    - [x] Suspense 경계 확인 (적절한 로딩 상태 표시)
+  - [x] 에러 처리 및 경계 케이스 확인
+    - [x] 데이터 없을 경우 처리 확인 (각 섹션의 조건부 렌더링)
+    - [x] API 에러 처리 확인 (선택적 섹션의 에러가 전체 페이지를 막지 않음)
+    - [x] 404 에러 처리 확인 (notFound() 함수 사용)
 
 ## Phase 4: 통계 대시보드 페이지 (`/stats`)
 

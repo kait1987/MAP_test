@@ -136,14 +136,20 @@ const Navbar = () => {
             </SignInButton>
           </SignedOut>
           <SignedIn>
-            <UserButton />
+            <UserButton 
+              userProfileMode="navigation"
+              userProfileUrl="/user"
+            />
           </SignedIn>
         </div>
 
         {/* 모바일: 햄버거 메뉴 버튼 */}
         <div className="flex md:hidden items-center gap-2">
           <SignedIn>
-            <UserButton />
+            <UserButton 
+              userProfileMode="navigation"
+              userProfileUrl="/user"
+            />
           </SignedIn>
           <Button
             variant="ghost"
