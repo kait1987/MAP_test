@@ -58,7 +58,7 @@ declare global {
         LatLngBounds: new () => naver.maps.LatLngBounds;
         Point: new (x: number, y: number) => naver.maps.Point;
         Position: {
-          TOP_RIGHT: naver.maps.Position;
+          TOP_RIGHT: number;
         };
         Event: {
           addListener: (

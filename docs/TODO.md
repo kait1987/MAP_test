@@ -502,78 +502,277 @@
     - [x] components/tour-card.tsx에서 상세페이지 링크 확인 (/places/${tour.contentid})
     - [x] TypeScript 컴파일 에러 없음 확인
     - [x] 린터 에러 없음 확인
-- [ ] 기본 정보 섹션 (MVP 2.4.1)
-  - [ ] `components/tour-detail/detail-info.tsx` 생성
-    - [ ] `getDetailCommon()` API 연동
-    - [ ] 관광지명 (대제목)
-    - [ ] 대표 이미지 (크게 표시)
-    - [ ] 주소 표시 및 복사 기능
-      - [ ] 클립보드 API 사용
-      - [ ] 복사 완료 토스트
-    - [ ] 전화번호 (클릭 시 전화 연결)
-    - [ ] 홈페이지 (링크)
-    - [ ] 개요 (긴 설명문)
-    - [ ] 관광 타입 및 카테고리 뱃지
-    - [ ] 정보 없는 항목 숨김 처리
-- [ ] 운영 정보 섹션 (MVP 2.4.2)
-  - [ ] `components/tour-detail/detail-intro.tsx` 생성
-    - [ ] `getDetailIntro()` API 연동
-    - [ ] 운영시간/개장시간
-    - [ ] 휴무일
-    - [ ] 이용요금
-    - [ ] 주차 가능 여부
-    - [ ] 수용인원
-    - [ ] 체험 프로그램
-    - [ ] 유모차/반려동물 동반 가능 여부
-    - [ ] 정보 없는 항목 숨김 처리
-- [ ] 이미지 갤러리 (MVP 2.4.3)
-  - [ ] `components/tour-detail/detail-gallery.tsx` 생성
-    - [ ] `getDetailImage()` API 연동
-    - [ ] 대표 이미지 + 서브 이미지들
-    - [ ] 이미지 슬라이드 기능 (Swiper 또는 캐러셀)
-    - [ ] 이미지 클릭 시 전체화면 모달
-    - [ ] 이미지 없으면 기본 이미지
-    - [ ] Next.js Image 컴포넌트 사용 (최적화)
-- [ ] 지도 섹션 (MVP 2.4.4)
-  - [ ] `components/tour-detail/detail-map.tsx` 생성
-    - [ ] 해당 관광지 위치 표시
-    - [ ] 마커 1개 표시
-    - [ ] "길찾기" 버튼
-      - [ ] 네이버 지도 앱/웹 연동
-      - [ ] URL: `https://map.naver.com/v5/directions/{좌표}`
-    - [ ] 좌표 정보 표시 (선택 사항)
-- [ ] 공유 기능 (MVP 2.4.5)
-  - [ ] `components/tour-detail/share-button.tsx` 생성
-    - [ ] URL 복사 기능
-      - [ ] `navigator.clipboard.writeText()` 사용
-      - [ ] HTTPS 환경 확인
-    - [ ] 복사 완료 토스트 메시지
-    - [ ] 공유 아이콘 버튼 (Share/Link 아이콘)
-  - [ ] Open Graph 메타태그
-    - [ ] `app/places/[contentId]/page.tsx`에 Metadata 생성
-    - [ ] `og:title` - 관광지명
-    - [ ] `og:description` - 관광지 설명 (100자 이내)
-    - [ ] `og:image` - 대표 이미지 (1200x630 권장)
-    - [ ] `og:url` - 상세페이지 URL
-    - [ ] `og:type` - "website"
-- [ ] 북마크 기능 (MVP 2.4.5)
-  - [ ] `components/bookmarks/bookmark-button.tsx` 생성
-    - [ ] 별 아이콘 (채워짐/비어있음)
-    - [ ] 북마크 상태 확인 (Supabase 조회)
-    - [ ] 북마크 추가/제거 기능
-    - [ ] 인증된 사용자 확인 (Clerk)
-    - [ ] 로그인하지 않은 경우: 로그인 유도 또는 localStorage 임시 저장
-  - [ ] Supabase 연동
-    - [ ] `lib/api/supabase-api.ts` 생성
-      - [ ] `getBookmark()` - 북마크 조회
-      - [ ] `addBookmark()` - 북마크 추가
-      - [ ] `removeBookmark()` - 북마크 제거
-      - [ ] `getUserBookmarks()` - 사용자 북마크 목록
-    - [ ] `bookmarks` 테이블 사용 (db.sql 참고)
-      - [ ] `user_id` (users 테이블 참조)
-      - [ ] `content_id` (한국관광공사 API contentid)
-      - [ ] UNIQUE 제약 (user_id, content_id)
-  - [ ] 상세페이지에 북마크 버튼 추가
+- [x] 기본 정보 섹션 (MVP 2.4.1)
+  - [x] `components/tour-detail/detail-info.tsx` 생성
+    - [x] `getDetailCommon()` API 연동
+    - [x] 관광지명 (대제목)
+    - [x] 대표 이미지 (크게 표시)
+    - [x] 주소 표시 및 복사 기능
+      - [x] 클립보드 API 사용
+      - [x] 복사 완료 토스트
+    - [x] 전화번호 (클릭 시 전화 연결)
+    - [x] 홈페이지 (링크)
+    - [x] 개요 (긴 설명문)
+    - [x] 관광 타입 및 카테고리 뱃지
+    - [x] 정보 없는 항목 숨김 처리
+  ***
+  - [x] components/tour-detail/detail-info.tsx 생성 (Client Component)
+    - [x] TourDetail 타입 props 정의
+    - [x] 섹션별 카드 레이아웃 (rounded-lg border bg-card p-6 md:p-8)
+    - [x] 반응형 디자인 (모바일 우선)
+    - [x] 접근성 지원 (ARIA 라벨, aria-label 속성)
+  - [x] 관광지명 표시
+    - [x] h1 태그 사용 (페이지당 하나)
+    - [x] 큰 폰트 사이즈 (text-3xl md:text-4xl)
+    - [x] 굵은 폰트 (font-bold)
+    - [x] 적절한 여백 (mb-6)
+  - [x] 대표 이미지 표시
+    - [x] Next.js Image 컴포넌트 사용
+    - [x] getImageUrl 함수 구현 (firstimage → firstimage2 → placeholder)
+    - [x] 크게 표시 (aspect-video)
+    - [x] 반응형 크기 조정 (sizes 속성)
+    - [x] 이미지 최적화 (priority 속성)
+    - [x] 이미지 fallback 처리 (via.placeholder.com)
+  - [x] 주소 표시 및 복사 기능
+    - [x] 주소 표시 (addr1, addr2, zipcode 조합)
+    - [x] MapPin 아이콘 사용 (lucide-react)
+    - [x] 복사 버튼 구현 (Copy 아이콘, lucide-react)
+    - [x] navigator.clipboard.writeText() 사용
+    - [x] Fallback 처리 (document.execCommand 사용)
+    - [x] 복사 완료 토스트 (toast.success())
+    - [x] 복사 상태 표시 (Check 아이콘, "복사됨" 텍스트)
+    - [x] 에러 처리 (복사 실패 시 toast.error())
+  - [x] 전화번호 표시 및 연결
+    - [x] 전화번호 표시 (tel 필드가 있을 때만)
+    - [x] Phone 아이콘 사용 (lucide-react)
+    - [x] tel: 링크 사용 (클릭 시 전화 앱 열기)
+    - [x] 접근성 (aria-label)
+    - [x] 호버 효과 (hover:text-primary)
+  - [x] 홈페이지 링크
+    - [x] 홈페이지 표시 (homepage 필드가 있을 때만)
+    - [x] ExternalLink 아이콘 사용 (lucide-react)
+    - [x] 새 탭에서 열기 (target="\_blank", rel="noopener noreferrer")
+    - [x] URL 유효성 검사 및 정규화 (normalizeHomepageUrl 함수)
+    - [x] http:// 또는 https:// 자동 추가
+  - [x] 개요 표시
+    - [x] 개요 텍스트 표시 (overview 필드가 있을 때만)
+    - [x] 긴 텍스트 처리 (whitespace-pre-line로 줄바꿈 유지)
+    - [x] 읽기 쉽게 스타일링 (text-sm md:text-base, text-muted-foreground, leading-relaxed)
+    - [x] 섹션 구분선 (border-t border-border)
+  - [x] 관광 타입 및 카테고리 뱃지
+    - [x] 관광 타입 뱃지 (getContentTypeName() 함수 사용)
+    - [x] 타입별 색상 구분 (tour-card.tsx와 동일한 getBadgeColorClass 함수)
+    - [x] 카테고리 뱃지 (cat1, cat2, cat3)
+    - [x] 작은 뱃지 스타일 (bg-muted text-muted-foreground)
+    - [x] flex-wrap으로 여러 뱃지 배치
+  - [x] 정보 없는 항목 숨김 처리
+    - [x] 조건부 렌더링 ({detail.tel && (...)} 패턴)
+    - [x] 빈 문자열 체크 (detail.tel?.trim())
+    - [x] fullAddress 빈 값 체크
+    - [x] homepageUrl null 체크
+  - [x] 페이지 통합
+    - [x] app/places/[contentId]/page.tsx 수정
+    - [x] DetailInfo 컴포넌트 import 및 사용
+    - [x] 임시 기본 정보 섹션 제거
+    - [x] detail prop 전달
+  - [x] 검증 항목 확인
+    - [x] TypeScript 컴파일 에러 없음 확인
+    - [x] 린터 에러 없음 확인
+    - [x] 컴포넌트 정상 렌더링 확인
+- [x] 운영 정보 섹션 (MVP 2.4.2)
+  - [x] `components/tour-detail/detail-intro.tsx` 생성
+    - [x] `getDetailIntro()` API 연동
+    - [x] 운영시간/개장시간
+    - [x] 휴무일
+    - [x] 이용요금
+    - [x] 주차 가능 여부
+    - [x] 수용인원
+    - [x] 체험 프로그램
+    - [x] 유모차/반려동물 동반 가능 여부
+    - [x] 정보 없는 항목 숨김 처리
+  ***
+  - [x] components/tour-detail/detail-intro.tsx 생성 (Client Component)
+    - [x] TourIntro 타입 props 정의
+    - [x] 섹션별 카드 레이아웃 (rounded-lg border bg-card p-6 md:p-8)
+    - [x] 반응형 디자인 (모바일 우선)
+    - [x] 접근성 지원 (ARIA 라벨, aria-label 속성)
+  - [x] 타입별 필드 표시 로직 구현
+    - [x] contentTypeId에 따른 조건부 렌더링 (switch 문 사용)
+    - [x] 관광지(12) 필드: usetime, restdate, accomcount, expguide, expagerange, useseason, usetimefestival
+    - [x] 문화시설(14) 필드: usetime, usefee, discountinfo, spendtime
+    - [x] 축제/행사(15) 필드: eventstartdate, eventenddate, eventplace, program, agelimit, bookingplace, placeinfo, subevent
+    - [x] 여행코스(25) 필드: schedule, taketime, distance, theme
+    - [x] 레포츠(28) 필드: openperiod, reservation
+    - [x] 숙박(32) 필드: roomcount, roomtype, checkintime, checkouttime, refundregulation
+    - [x] 쇼핑(38) 필드: shopguide
+    - [x] 음식점(39) 필드: opentimefood, restdatefood, firstmenu, treatmenu
+    - [x] 공통 필드: parking, chkpet, infocenter
+    - [x] 아이콘 매핑 (lucide-react): Clock, Calendar, DollarSign, Car, Users, Activity, Dog, Phone, MapPin, CalendarDays, Route, CalendarRange, Bed, ShoppingBag, UtensilsCrossed, Info
+    - [x] 정보 없는 항목 숨김 처리 (hasValue 함수로 빈 문자열 체크)
+    - [x] 필드가 없으면 섹션 자체를 숨김 (null 반환)
+  - [x] UI 구현
+    - [x] 섹션 제목: "운영 정보" (h2)
+    - [x] 그리드 레이아웃 (모바일: 1열, 데스크톱: 2열)
+    - [x] 아이콘 + 텍스트 조합 (아이콘 좌측, 텍스트 우측)
+    - [x] 긴 텍스트 처리 (whitespace-pre-line로 줄바꿈 유지)
+    - [x] 반응형 간격 (gap-4 md:gap-6)
+  - [x] 페이지 통합
+    - [x] app/places/[contentId]/page.tsx 수정
+    - [x] getDetailIntro() API 호출 추가 (TourDetailData 함수)
+    - [x] contentId와 contentTypeId 전달 (TourDetail에서 가져옴)
+    - [x] 에러 처리 (운영 정보 없을 경우 null로 처리, 상세페이지는 계속 표시)
+    - [x] DetailIntro 컴포넌트 import 및 사용
+    - [x] TourDetailContent에 intro prop 추가
+    - [x] 조건부 렌더링 (intro가 있을 때만 표시)
+    - [x] 임시 운영 정보 섹션 제거
+  - [x] 검증 항목 확인
+    - [x] TypeScript 컴파일 에러 없음 확인
+    - [x] 린터 에러 없음 확인
+    - [x] 컴포넌트 정상 렌더링 확인
+- [x] 이미지 갤러리 (MVP 2.4.3)
+  - [x] `components/tour-detail/detail-gallery.tsx` 생성
+    - [x] `getDetailImage()` API 연동
+    - [x] 대표 이미지 + 서브 이미지들
+    - [x] 이미지 슬라이드 기능 (Swiper 또는 캐러셀)
+    - [x] 이미지 클릭 시 전체화면 모달
+    - [x] 이미지 없으면 기본 이미지
+    - [x] Next.js Image 컴포넌트 사용 (최적화)
+  ***
+  - [x] components/tour-detail/detail-gallery.tsx 생성 (Client Component)
+    - [x] TourImage[] 타입 props 정의
+    - [x] 섹션별 카드 레이아웃 (rounded-lg border bg-card p-6 md:p-8)
+    - [x] 반응형 디자인 (모바일 우선)
+    - [x] 접근성 지원 (ARIA 라벨, aria-label 속성)
+  - [x] 이미지 표시 로직 구현
+    - [x] getImageUrl 함수 구현 (originimgurl → smallimageurl → placeholder 순서로 fallback)
+    - [x] getImageAlt 함수 구현 (imagename 또는 기본 텍스트)
+    - [x] 이미지 목록 렌더링 (대표 이미지 + 썸네일 그리드)
+    - [x] 이미지 없을 경우 섹션 숨김 처리 (null 반환)
+    - [x] Next.js Image 컴포넌트 사용 (fill, object-cover, sizes 속성)
+    - [x] 이미지 최적화 (priority 속성: 첫 번째 이미지만, 나머지는 lazy loading)
+  - [x] 슬라이드 기능 구현
+    - [x] 버튼 기반 슬라이드 구현 (이전/다음 버튼, ChevronLeft/ChevronRight 아이콘)
+    - [x] 현재 이미지 인덱스 상태 관리 (useState)
+    - [x] 이미지 개수 표시 ("1 / 5" 형식, absolute positioning)
+    - [x] 순환 슬라이드 (마지막 이미지에서 다음 버튼 클릭 시 첫 이미지로)
+    - [x] 썸네일 클릭 시 대표 이미지 변경
+    - [x] 현재 선택된 썸네일 강조 표시 (ring-2 ring-primary)
+  - [x] 전체화면 모달 구현
+    - [x] shadcn/ui Dialog 컴포넌트 사용
+    - [x] 이미지 클릭 시 모달 열기 (handleImageClick 함수)
+    - [x] 모달 내에서도 슬라이드 기능 제공 (이전/다음 버튼)
+    - [x] 닫기 버튼 (X 아이콘, absolute positioning)
+    - [x] 키보드 네비게이션 (ESC로 닫기, 화살표 키로 이동)
+    - [x] 모달 스타일링 (max-w-7xl, h-[90vh], bg-black/95, 전체화면 느낌)
+    - [x] 모달 내 이미지 개수 표시
+  - [x] UI 구현
+    - [x] 섹션 제목: "이미지 갤러리" (h2)
+    - [x] 대표 이미지 크게 표시 (aspect-video, rounded-lg)
+    - [x] 서브 이미지 썸네일 그리드 (모바일: 2열, 데스크톱: 4열)
+    - [x] 이미지 호버 효과 (hover:scale-105, transition-transform)
+    - [x] 버튼 스타일링 (bg-black/50 hover:bg-black/70, 반투명 배경)
+    - [x] 반응형 간격 (gap-2 md:gap-4)
+  - [x] 페이지 통합
+    - [x] app/places/[contentId]/page.tsx 수정
+    - [x] getDetailImage() API 호출 추가 (TourDetailData 함수)
+    - [x] contentId 전달
+    - [x] 에러 처리 (이미지 없을 경우 빈 배열로 처리, 상세페이지는 계속 표시)
+    - [x] DetailGallery 컴포넌트 import 및 사용
+    - [x] TourDetailContent에 images prop 추가
+    - [x] 조건부 렌더링 (images.length > 0일 때만 표시)
+    - [x] 임시 이미지 갤러리 섹션 제거
+  - [x] 검증 항목 확인
+    - [x] TypeScript 컴파일 에러 없음 확인
+    - [x] 린터 에러 없음 확인
+    - [x] 컴포넌트 정상 렌더링 확인
+- [x] 지도 섹션 (MVP 2.4.4)
+  - [x] `components/tour-detail/detail-map.tsx` 생성
+    - [x] 해당 관광지 위치 표시
+    - [x] 마커 1개 표시
+    - [x] "길찾기" 버튼
+      - [x] 네이버 지도 앱/웹 연동
+      - [x] URL: `https://map.naver.com/v5/directions/{좌표}`
+    - [x] 좌표 정보 표시 (선택 사항)
+    ***
+    - [x] components/tour-detail/detail-map.tsx 생성 (Client Component, TourDetail props, 섹션 레이아웃)
+    - [x] Naver Maps API 스크립트 로드 (loadNaverMapsScript 함수 재사용, 환경변수 확인)
+    - [x] 지도 초기화 및 마커 표시 (좌표 변환, 지도 생성, 마커 1개 생성, 인포윈도우)
+    - [x] 길찾기 버튼 구현 (네이버 지도 URL 생성, 새 탭에서 열기, 지도 위에 absolute positioning)
+    - [x] 좌표 정보 표시 (토글 버튼, WGS84 좌표 표시, 복사 기능, toast 알림)
+    - [x] app/places/[contentId]/page.tsx 수정 (DetailMap 컴포넌트 통합, 조건부 렌더링, 에러 처리)
+    - [x] TypeScript 컴파일 에러 수정 (naver-map.tsx Position 타입 중복 정의 해결)
+    - [x] 검증 항목 확인 (TypeScript/린터 에러 없음, 지도 로딩 확인, 마커 표시 확인, 길찾기 버튼 동작 확인)
+- [x] 공유 기능 (MVP 2.4.5)
+  - [x] `components/tour-detail/share-button.tsx` 생성
+    - [x] URL 복사 기능
+      - [x] `navigator.clipboard.writeText()` 사용
+      - [x] HTTPS 환경 확인
+    - [x] 복사 완료 토스트 메시지
+    - [x] 공유 아이콘 버튼 (Share/Link 아이콘)
+  - [x] Open Graph 메타태그
+    - [x] `app/places/[contentId]/page.tsx`에 Metadata 생성
+    - [x] `og:title` - 관광지명
+    - [x] `og:description` - 관광지 설명 (100자 이내)
+    - [x] `og:image` - 대표 이미지 (1200x630 권장)
+    - [x] `og:url` - 상세페이지 URL
+    - [x] `og:type` - "website"
+    ***
+    - [x] components/tour-detail/share-button.tsx 생성 (Client Component, URL 복사 기능, 토스트 알림, 버튼 상태 관리)
+    - [x] URL 복사 핸들러 구현 (navigator.clipboard.writeText, fallback 처리, 에러 처리)
+    - [x] 복사 완료 피드백 (toast.success, 버튼 상태 변경, Check 아이콘, 2초 후 복귀)
+    - [x] app/places/[contentId]/page.tsx에 ShareButton 통합 (뒤로가기 버튼 옆에 배치, flex 레이아웃)
+    - [x] generateMetadata 함수 추가 (Next.js 15 App Router, getDetailCommon API 호출)
+    - [x] Open Graph 메타태그 구현 (og:title, og:description, og:image, og:url, og:type, og:siteName, og:locale)
+    - [x] Twitter Card 메타태그 추가 (summary_large_image, title, description, images)
+    - [x] Metadata 생성 에러 처리 (API 실패 시 기본 메타데이터 반환, 이미지 없을 경우 처리)
+    - [x] 절대 URL 생성 (NEXT_PUBLIC_SITE_URL 또는 VERCEL_URL 환경변수 사용)
+    - [x] 설명문 자르기 함수 (100자 이내, 말줄임표 추가)
+    - [x] 검증 항목 확인 (TypeScript/린터 에러 없음, URL 복사 기능 확인, 메타데이터 생성 확인)
+- [x] 북마크 기능 (MVP 2.4.5)
+  - [x] `components/bookmarks/bookmark-button.tsx` 생성
+    - [x] 별 아이콘 (채워짐/비어있음)
+    - [x] 북마크 상태 확인 (Supabase 조회)
+    - [x] 북마크 추가/제거 기능
+    - [x] 인증된 사용자 확인 (Clerk)
+    - [x] 로그인하지 않은 경우: 로그인 유도 또는 localStorage 임시 저장
+  - [x] Supabase 연동
+    - [x] `lib/api/supabase-api.ts` 생성
+      - [x] `checkBookmark()` - 북마크 조회
+      - [x] `addBookmark()` - 북마크 추가
+      - [x] `removeBookmark()` - 북마크 제거
+      - [x] `getUserBookmarks()` - 사용자 북마크 목록
+    - [x] `bookmarks` 테이블 사용 (db.sql 참고)
+      - [x] `user_id` (users 테이블 참조)
+      - [x] `content_id` (한국관광공사 API contentid)
+      - [x] UNIQUE 제약 (user_id, content_id)
+  - [x] 상세페이지에 북마크 버튼 추가
+    ***
+    - [x] lib/api/supabase-api.ts 생성 (북마크 CRUD 함수들)
+      - [x] checkBookmark 함수 구현 (users 테이블에서 clerk_id로 UUID 조회 후 북마크 확인)
+      - [x] addBookmark 함수 구현 (북마크 추가, UNIQUE 제약 에러 처리)
+      - [x] removeBookmark 함수 구현 (북마크 제거)
+      - [x] getUserBookmarks 함수 구현 (사용자 북마크 목록 조회, created_at DESC 정렬)
+      - [x] Bookmark 인터페이스 정의
+      - [x] ClerkSupabaseClient 타입 정의 (SupabaseClient<any>)
+    - [x] components/bookmarks/bookmark-button.tsx 생성 (Client Component)
+      - [x] Clerk 인증 확인 (useAuth, useUser 훅)
+      - [x] 북마크 상태 관리 (useState, useEffect로 초기 상태 조회)
+      - [x] 로딩 상태 관리 (isLoading, isToggling)
+      - [x] 별 아이콘 UI 구현 (Star 아이콘, fill-current로 채워진 별 표시)
+      - [x] 호버 효과 (hover:scale-110, transition-transform)
+      - [x] 북마크 토글 기능 (handleToggleBookmark 함수)
+      - [x] 로그인하지 않은 경우 로그인 페이지로 리다이렉트 (useRouter)
+      - [x] 토스트 알림 (성공/실패 메시지)
+      - [x] 로딩 중 스피너 표시 (Loader2 아이콘)
+      - [x] 접근성 (aria-label, aria-pressed)
+    - [x] app/places/[contentId]/page.tsx 수정
+      - [x] BookmarkButton 컴포넌트 import
+      - [x] 북마크 버튼을 ShareButton 옆에 배치 (flex 레이아웃)
+      - [x] contentId prop 전달
+    - [x] 검증 항목 확인
+      - [x] TypeScript 컴파일 에러 없음 확인
+      - [x] 린터 에러 없음 확인
+      - [x] 북마크 버튼 정상 렌더링 확인
 - [ ] 반려동물 정보 섹션 (MVP 2.5)
   - [ ] `components/tour-detail/detail-pet-tour.tsx` 생성
     - [ ] `getDetailPetTour()` API 연동
