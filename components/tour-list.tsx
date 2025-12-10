@@ -16,6 +16,7 @@
 
 import type { TourItem } from "@/lib/types/tour";
 import TourCard from "@/components/tour-card";
+import Pagination from "@/components/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Error } from "@/components/ui/error";
 import { Inbox } from "lucide-react";
@@ -25,7 +26,14 @@ export interface TourListProps {
   tours: TourItem[];
   isLoading?: boolean;
   error?: Error | null;
+  errorType?: "api" | "network" | "generic";
   onRetry?: () => void;
+  onTourClick?: (tourId: string) => void;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+  };
   className?: string;
 }
 
@@ -68,16 +76,31 @@ export default function TourList({
   tours,
   isLoading = false,
   error = null,
+  errorType = "api",
   onRetry,
+  onTourClick,
+  pagination,
   className,
 }: TourListProps) {
   // 에러 상태
   if (error) {
+    // 네트워크 에러 감지
+    const isNetworkError =
+      errorType === "network" ||
+      (error instanceof Error &&
+        (error.message.includes("fetch") ||
+          error.message.includes("network") ||
+          error.message.includes("Failed to fetch")));
+
     return (
       <div className={className}>
         <Error
-          type="api"
-          message="관광지 목록을 불러오는 중 오류가 발생했습니다."
+          type={isNetworkError ? "network" : errorType}
+          message={
+            isNetworkError
+              ? "인터넷 연결을 확인해주세요"
+              : "관광지 목록을 불러오는 중 오류가 발생했습니다."
+          }
           onRetry={onRetry}
           showRetry={!!onRetry}
         />
@@ -113,19 +136,34 @@ export default function TourList({
 
   // 목록 표시
   return (
-    <div
-      className={cn(
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6",
-        className
-      )}
-      role="list"
-      aria-label="관광지 목록"
-    >
-      {tours.map((tour, index) => (
-        <div key={tour.contentid || `tour-${index}`} role="listitem">
-          <TourCard tour={tour} />
+    <div className={className}>
+      <div
+        className={cn(
+          "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+        )}
+        role="list"
+        aria-label="관광지 목록"
+      >
+        {tours.map((tour, index) => (
+          <div key={tour.contentid || `tour-${index}`} role="listitem">
+            <TourCard
+              tour={tour}
+              onTourClick={onTourClick}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* 페이지네이션 */}
+      {pagination && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalCount={pagination.totalCount}
+          />
         </div>
-      ))}
+      )}
     </div>
   );
 }

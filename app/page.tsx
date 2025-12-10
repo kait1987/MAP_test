@@ -16,8 +16,8 @@ import { Suspense } from "react";
 import { getAreaBasedList, getAreaCode, searchKeyword } from "@/lib/api/tour-api";
 import { CONTENT_TYPE } from "@/lib/types/tour";
 import { parseFilterParams, DEFAULT_FILTERS } from "@/lib/types/filter";
-import TourList from "@/components/tour-list";
 import TourFilters from "@/components/tour-filters";
+import HomeContent from "@/components/home-content";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -54,8 +54,9 @@ async function TourListData({
     const pageNo = filters.pageNo || DEFAULT_FILTERS.pageNo; // 1페이지
 
     // 검색 키워드가 있으면 검색 API 호출, 없으면 지역 기반 목록 API 호출
+    let result;
     if (filters.keyword) {
-      const tours = await searchKeyword({
+      result = await searchKeyword({
         keyword: filters.keyword,
         areaCode: filters.areaCode,
         contentTypeId: filters.contentTypeId,
@@ -63,23 +64,46 @@ async function TourListData({
         pageNo,
         arrange: arrange === "A" ? "A" : "C", // searchKeyword는 "A" 또는 "C"만 지원
       });
-      return <TourList tours={tours} />;
     } else {
-      const tours = await getAreaBasedList({
+      result = await getAreaBasedList({
         areaCode,
         contentTypeId,
         numOfRows,
         pageNo,
         arrange,
       });
-      return <TourList tours={tours} />;
     }
+
+    return (
+      <HomeContent
+        tours={result.items}
+        pagination={{
+          currentPage: result.pageNo,
+          totalPages: result.totalPages,
+          totalCount: result.totalCount,
+        }}
+      />
+    );
   } catch (error) {
     console.error("관광지 목록 로드 실패:", error);
+    
+    // 에러 타입 구분
+    let errorType: "api" | "network" | "generic" = "api";
+    if (error instanceof Error) {
+      if (
+        error.message.includes("fetch") ||
+        error.message.includes("network") ||
+        error.message.includes("Failed to fetch")
+      ) {
+        errorType = "network";
+      }
+    }
+    
     return (
-      <TourList
+      <HomeContent
         tours={[]}
         error={error instanceof Error ? error : new Error("알 수 없는 오류")}
+        errorType={errorType}
       />
     );
   }
@@ -131,33 +155,35 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </Suspense>
 
         {/* 메인 콘텐츠 영역 */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 관광지 목록 영역 (좌측 또는 전체) */}
-          <section
-            className="lg:col-span-1"
-            aria-label="관광지 목록"
+        <div className="mt-6">
+          <Suspense
+            fallback={
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 목록 영역 스켈레톤 */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="rounded-xl border border-border bg-card shadow-md overflow-hidden"
+                      >
+                        <Skeleton className="aspect-video w-full" />
+                        <div className="p-4 space-y-3">
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                          <Skeleton className="h-6 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* 지도 영역 스켈레톤 (데스크톱만) */}
+                <Skeleton className="h-[600px] rounded-lg hidden lg:block" />
+              </div>
+            }
           >
-            <Suspense
-              fallback={
-                <TourList tours={[]} isLoading={true} />
-              }
-            >
-              <TourListData searchParams={params} />
-            </Suspense>
-          </section>
-
-          {/* 지도 영역 (우측, 데스크톱만 표시) */}
-          <section
-            className="hidden lg:block min-h-[400px] p-6 rounded-lg border bg-card"
-            aria-label="지도"
-          >
-            <h2 className="text-xl font-semibold mb-4">지도</h2>
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p className="text-center">
-                네이버 지도 연동은 Phase 2 후반에 구현 예정입니다.
-              </p>
-            </div>
-          </section>
+            <TourListData searchParams={params} />
+          </Suspense>
         </div>
       </div>
     </main>

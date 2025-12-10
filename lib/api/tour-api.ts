@@ -31,6 +31,7 @@ import type {
   TourImage,
   PetTourInfo,
   ApiResponse,
+  PagedResponse,
 } from "@/lib/types/tour";
 
 // =====================================================
@@ -422,7 +423,7 @@ export async function getAreaBasedList(params: {
   listYN?: "Y" | "N";
   arrange?: "A" | "B" | "C" | "D";
   modifiedtime?: string;
-}): Promise<TourItem[]> {
+}): Promise<PagedResponse<TourItem>> {
   const endpoint = "/areaBasedList2";
 
   if (!params.areaCode || !params.contentTypeId) {
@@ -471,7 +472,19 @@ export async function getAreaBasedList(params: {
     (response.response.body.items as unknown) as TourItem | TourItem[]
   );
 
-  return items;
+  // 페이지네이션 정보 추출
+  const totalCount = response.response.body.totalCount || 0;
+  const numOfRows = response.response.body.numOfRows || params.numOfRows || 12;
+  const pageNo = response.response.body.pageNo || params.pageNo || 1;
+  const totalPages = Math.ceil(totalCount / numOfRows);
+
+  return {
+    items,
+    totalCount,
+    numOfRows,
+    pageNo,
+    totalPages,
+  };
 }
 
 /**
@@ -506,7 +519,7 @@ export async function searchKeyword(params: {
   listYN?: "Y" | "N";
   arrange?: "A" | "B" | "C" | "D";
   modifiedtime?: string;
-}): Promise<TourItem[]> {
+}): Promise<PagedResponse<TourItem>> {
   const endpoint = "/searchKeyword2";
 
   if (!params.keyword || params.keyword.trim() === "") {
@@ -548,7 +561,19 @@ export async function searchKeyword(params: {
     (response.response.body.items as unknown) as TourItem | TourItem[]
   );
 
-  return items;
+  // 페이지네이션 정보 추출
+  const totalCount = response.response.body.totalCount || 0;
+  const numOfRows = response.response.body.numOfRows || params.numOfRows || 12;
+  const pageNo = response.response.body.pageNo || params.pageNo || 1;
+  const totalPages = Math.ceil(totalCount / numOfRows);
+
+  return {
+    items,
+    totalCount,
+    numOfRows,
+    pageNo,
+    totalPages,
+  };
 }
 
 /**

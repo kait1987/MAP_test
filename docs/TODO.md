@@ -294,42 +294,177 @@
       - [x] 모바일/데스크톱 모두 정상 동작 확인
       - [x] TypeScript 컴파일 에러 없음 확인
       - [x] 린터 에러 없음 확인
-- [ ] 네이버 지도 연동 (MVP 2.2)
-  - [ ] `components/naver-map.tsx` 생성
-    - [ ] Naver Maps API v3 초기화
-    - [ ] 지도 컨테이너 설정
-    - [ ] 초기 중심 좌표 설정
-    - [ ] 줌 레벨 설정
-  - [ ] 마커 표시
-    - [ ] 관광지 목록을 마커로 표시
-    - [ ] 좌표 변환 (KATEC → WGS84: mapx/mapy / 10000000)
-    - [ ] 마커 클릭 시 인포윈도우
-      - [ ] 관광지명
-      - [ ] 간단한 설명
-      - [ ] "상세보기" 버튼
+- [x] 네이버 지도 연동 (MVP 2.2)
+  - [x] `components/naver-map.tsx` 생성
+    - [x] Naver Maps API v3 초기화
+    - [x] 지도 컨테이너 설정
+    - [x] 초기 중심 좌표 설정
+    - [x] 줌 레벨 설정
+  - [x] 마커 표시
+    - [x] 관광지 목록을 마커로 표시
+    - [x] 좌표 변환 (KATEC → WGS84: mapx/mapy / 10000000)
+    - [x] 마커 클릭 시 인포윈도우
+      - [x] 관광지명
+      - [x] 간단한 설명
+      - [x] "상세보기" 버튼
     - [ ] 관광 타입별 마커 색상 구분 (선택 사항)
-  - [ ] 지도-리스트 연동
-    - [ ] 리스트 항목 클릭 → 지도 이동 및 마커 강조
+  - [x] 지도-리스트 연동
+    - [x] 리스트 항목 클릭 → 지도 이동 및 마커 강조
     - [ ] 리스트 항목 호버 → 마커 강조 (선택 사항)
-    - [ ] 마커 클릭 → 리스트 항목 강조
-  - [ ] 지도 컨트롤
-    - [ ] 줌 인/아웃 버튼
-    - [ ] 지도 유형 선택 (일반/스카이뷰)
+    - [x] 마커 클릭 → 리스트 항목 강조
+  - [x] 지도 컨트롤
+    - [x] 줌 인/아웃 버튼 (네이버 지도 기본 컨트롤)
+    - [x] 지도 유형 선택 (일반/스카이뷰) - 네이버 지도 기본 컨트롤
     - [ ] 현재 위치 버튼 (선택 사항)
-  - [ ] 반응형 레이아웃
-    - [ ] 데스크톱: 리스트(좌측 50%) + 지도(우측 50%) 분할
-    - [ ] 모바일: 탭 형태로 리스트/지도 전환
-- [ ] 페이지네이션
-  - [ ] 무한 스크롤 구현
-    - [ ] Intersection Observer 사용
-    - [ ] 하단 로딩 인디케이터
-    - [ ] 페이지당 10-20개 항목
-  - [ ] 또는 페이지 번호 선택 방식
-- [ ] 최종 통합 및 스타일링
-  - [ ] 모든 기능 통합 테스트
-  - [ ] 반응형 디자인 확인 (모바일/태블릿/데스크톱)
-  - [ ] 로딩 상태 개선
-  - [ ] 에러 처리 개선
+  - [x] 반응형 레이아웃
+    - [x] 데스크톱: 리스트(좌측 50%) + 지도(우측 50%) 분할
+    - [x] 모바일: 탭 형태로 리스트/지도 전환
+    ***
+    - [x] lib/utils/coordinate.ts 생성 (convertKATECToWGS84 함수, KATEC → WGS84 좌표 변환)
+    - [x] components/naver-map.tsx 생성 (Client Component)
+      - [x] Naver Maps API 스크립트 동적 로드 (ncpKeyId 파라미터 사용, 스크립트 중복 로드 방지)
+      - [x] 지도 초기화 (useEffect, 지도 컨테이너 ref, 초기 중심 좌표: 서울 또는 첫 번째 관광지, 줌 레벨 13)
+      - [x] 마커 표시 (관광지 목록을 마커로 변환, 좌표 변환 함수 사용, 마커 배열 관리)
+      - [x] 마커 아이콘 커스터마이징 (원형 파란색 마커, 흰색 테두리, 그림자 효과)
+      - [x] 인포윈도우 생성 (마커 클릭 시 표시, 관광지명, 주소, "상세보기" 버튼)
+      - [x] 인포윈도우 HTML 이스케이프 처리 (XSS 방지, 따옴표 이스케이프)
+      - [x] 지도 컨트롤 (네이버 지도 기본 줌 컨트롤, 지도 유형 선택)
+      - [x] 관광지 목록 변경 시 마커 업데이트 (기존 마커 제거 후 새 마커 추가, useEffect 의존성)
+      - [x] 모든 마커가 보이도록 지도 범위 자동 조정 (fitBounds, LatLngBounds 사용)
+      - [x] 선택된 관광지로 지도 이동 (panTo, setZoom 15, 인포윈도우 열기)
+      - [x] 컴포넌트 정리 (cleanup) 로직 (useEffect cleanup, 마커 및 인포윈도우 제거)
+      - [x] 지도 높이 반응형 설정 (모바일 400px, 태블릿 500px, 데스크톱 600px)
+      - [x] 로딩 상태 표시 (Skeleton UI, isLoading 상태 관리)
+      - [x] 에러 처리 (API 키 누락, 스크립트 로드 실패, 지도 초기화 실패, Error 컴포넌트 사용)
+      - [x] 타입 정의 (naver.maps 네임스페이스, Window 인터페이스 확장, TypeScript 타입 안전성)
+    - [x] components/home-content.tsx 생성 (Client Component)
+      - [x] 지도-리스트 연동 상태 관리 (selectedTourId, useState, activeTab 상태)
+      - [x] 데스크톱 레이아웃 (리스트 + 지도 분할, lg:grid-cols-2, hidden lg:grid)
+      - [x] 모바일 레이아웃 (탭 형태로 전환, Button 기반 탭, lg:hidden)
+      - [x] 리스트 항목 클릭 핸들러 (지도 이동, 모바일에서 탭 전환, window.innerWidth 체크)
+      - [x] 접근성 개선 (aria-label, aria-pressed 속성)
+    - [x] components/tour-list.tsx 수정
+      - [x] onTourClick prop 추가
+      - [x] TourCard에 onTourClick 전달
+    - [x] components/tour-card.tsx 수정
+      - [x] onTourClick prop 추가
+      - [x] Link 클릭 시 onTourClick 호출
+    - [x] app/page.tsx 수정
+      - [x] HomeContent 컴포넌트 import 및 사용
+      - [x] TourListData에서 HomeContent로 tours 전달
+      - [x] 기존 지도 placeholder 제거
+    - [x] TypeScript 컴파일 에러 수정
+      - [x] naver.maps 타입 정의 추가
+      - [x] Error 컴포넌트 props 수정 (error → type, message)
+      - [x] globalThis.Error 사용하여 네이티브 Error와 구분
+    - [x] 검증 항목 확인
+      - [x] Naver Maps API 스크립트 정상 로드 확인
+      - [x] 지도 초기화 및 표시 확인
+      - [x] 관광지 목록이 마커로 표시됨 확인
+      - [x] 좌표 변환 정확성 확인 (KATEC → WGS84)
+      - [x] 마커 클릭 시 인포윈도우 표시 확인
+      - [x] 인포윈도우에서 상세페이지 이동 확인
+      - [x] 리스트 항목 클릭 시 지도 이동 및 마커 강조 확인
+      - [x] 마커 클릭 시 리스트 항목 강조 확인 (onTourSelect 콜백)
+      - [x] 데스크톱 레이아웃 확인 (리스트 + 지도 분할)
+      - [x] 모바일 레이아웃 확인 (탭 전환)
+      - [x] 검색/필터 변경 시 지도 마커 업데이트 확인
+      - [x] 지도 로딩 상태 표시 확인
+      - [x] 에러 처리 확인 (API 키 누락 등)
+      - [x] TypeScript 컴파일 에러 없음 확인
+      - [x] 린터 에러 없음 확인
+- [x] 페이지네이션
+  - [x] 페이지 번호 선택 방식 구현
+    - [x] API 함수 수정 (getAreaBasedList, searchKeyword)
+      - [x] PagedResponse<TourItem> 반환 타입으로 변경
+      - [x] totalCount, numOfRows, pageNo 추출
+      - [x] totalPages 계산 (Math.ceil(totalCount / numOfRows))
+    - [x] 페이지네이션 컴포넌트 생성 (components/pagination.tsx)
+      - [x] 이전/다음 버튼
+      - [x] 페이지 번호 버튼 (현재 페이지 ±2 범위)
+      - [x] 총 페이지 수 표시
+      - [x] URL searchParams 연동
+      - [x] 반응형 디자인
+      - [x] 접근성 (ARIA 라벨, 키보드 네비게이션)
+    - [x] 데이터 흐름 수정
+      - [x] app/page.tsx: TourListData에서 pagination 정보 추출 및 전달
+      - [x] components/home-content.tsx: pagination prop 추가 및 전달
+      - [x] components/tour-list.tsx: pagination prop 추가 및 Pagination 컴포넌트 렌더링
+    - [x] 필터 변경 시 pageNo 리셋 확인 (이미 구현되어 있음)
+    ***
+    - [x] lib/api/tour-api.ts 수정
+      - [x] PagedResponse 타입 import 추가
+      - [x] getAreaBasedList() 함수 반환 타입 변경 (TourItem[] → PagedResponse<TourItem>)
+      - [x] searchKeyword() 함수 반환 타입 변경 (TourItem[] → PagedResponse<TourItem>)
+      - [x] response.response.body에서 totalCount, numOfRows, pageNo 추출
+      - [x] totalPages 계산 (Math.ceil(totalCount / numOfRows))
+      - [x] PagedResponse 객체 생성하여 반환
+    - [x] components/pagination.tsx 생성 (Client Component)
+      - [x] PaginationProps 인터페이스 정의 (currentPage, totalPages, totalCount)
+      - [x] getPageNumbers 함수 구현 (현재 페이지 ±2 범위 계산, 총 페이지 7개 이하면 모두 표시)
+      - [x] 이전/다음 버튼 구현 (ChevronLeft, ChevronRight 아이콘, 첫/마지막 페이지에서 비활성화)
+      - [x] 페이지 번호 버튼 구현 (현재 페이지 강조, outline/default variant)
+      - [x] 첫 페이지/마지막 페이지 버튼 구현 (현재 범위에 없을 때만 표시, 생략 표시 "...")
+      - [x] 총 페이지 수 표시 (데스크톱에서만 표시, "1 / 10 페이지" 형식)
+      - [x] URL searchParams 연동 (useRouter, useSearchParams, handlePageChange 함수)
+      - [x] 기존 필터 파라미터 유지 (URLSearchParams 사용)
+      - [x] 반응형 디자인 (모바일에서 총 페이지 수 숨김, sm:block)
+      - [x] 접근성 (aria-label, aria-current, sr-only 텍스트)
+      - [x] 페이지가 1개 이하면 null 반환 (표시하지 않음)
+    - [x] app/page.tsx 수정
+      - [x] TourListData 함수에서 PagedResponse 받아서 tours와 pagination 정보 분리
+      - [x] HomeContent에 pagination prop 전달 (currentPage, totalPages, totalCount)
+    - [x] components/home-content.tsx 수정
+      - [x] HomeContentProps 인터페이스에 pagination prop 추가
+      - [x] TourList에 pagination prop 전달 (데스크톱/모바일 모두)
+    - [x] components/tour-list.tsx 수정
+      - [x] TourListProps 인터페이스에 pagination prop 추가
+      - [x] Pagination 컴포넌트 import
+      - [x] 목록 하단에 Pagination 컴포넌트 렌더링 (mt-8 간격)
+      - [x] pagination이 있을 때만 표시
+    - [x] 필터 변경 시 pageNo 리셋 확인
+      - [x] components/tour-filters.tsx의 handleFilterChange 함수에서 params.delete("pageNo") 확인
+      - [x] 필터 변경 시 pageNo가 자동으로 리셋됨 확인
+    - [x] 검증 항목 확인
+      - [x] API에서 totalCount 정상 추출 확인
+      - [x] 페이지 번호 클릭 시 URL 업데이트 확인 (/?pageNo=2)
+      - [x] 필터 변경 시 pageNo 자동 리셋 확인
+      - [x] 이전/다음 버튼 동작 확인 (첫/마지막 페이지에서 비활성화)
+      - [x] 총 페이지 수 계산 정확성 확인 (Math.ceil 사용)
+      - [x] 페이지 번호 범위 표시 확인 (현재 페이지 ±2)
+      - [x] 첫 페이지/마지막 페이지 버튼 표시 확인 (범위 밖일 때만)
+      - [x] 모바일/데스크톱 반응형 확인
+      - [x] TypeScript 컴파일 에러 없음 확인
+      - [x] 린터 에러 없음 확인
+- [x] 최종 통합 및 스타일링
+  - [x] 모든 기능 통합 테스트
+  - [x] 반응형 디자인 확인 (모바일/태블릿/데스크톱)
+  - [x] 로딩 상태 개선
+  - [x] 에러 처리 개선
+  ***
+  - [x] 에러 처리 개선
+    - [x] components/home-content.tsx에 onRetry prop 추가
+    - [x] router.refresh()를 사용한 재시도 기능 구현
+    - [x] components/tour-list.tsx에 errorType prop 추가
+    - [x] 에러 타입별 처리 (api, network, generic)
+    - [x] app/page.tsx에서 네트워크 에러 감지 로직 추가
+    - [x] 네트워크 에러 메시지 개선
+  - [x] 로딩 상태 개선
+    - [x] app/page.tsx의 Suspense fallback 개선
+    - [x] 목록 영역 스켈레톤을 실제 그리드 레이아웃과 일치하도록 수정
+    - [x] 6개의 스켈레톤 카드 표시 (그리드 레이아웃과 일치)
+    - [x] 지도 영역 스켈레톤 유지 (데스크톱만 표시)
+  - [x] 기능 통합 테스트
+    - [x] 필터 기능 정상 동작 확인
+    - [x] 검색 기능 정상 동작 확인
+    - [x] 지도 연동 정상 동작 확인
+    - [x] 페이지네이션 정상 동작 확인
+    - [x] 모든 기능 조합 정상 동작 확인
+  - [x] 반응형 디자인 확인
+    - [x] 모바일 레이아웃 확인 (< 768px)
+    - [x] 태블릿 레이아웃 확인 (768px - 1024px)
+    - [x] 데스크톱 레이아웃 확인 (> 1024px)
+    - [x] 접근성 속성 확인 (ARIA 라벨, role 등)
 
 ## Phase 3: 상세페이지 (`/places/[contentId]`)
 

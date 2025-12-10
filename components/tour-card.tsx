@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 export interface TourCardProps {
   tour: TourItem;
   className?: string;
+  onTourClick?: (tourId: string) => void;
 }
 
 /**
@@ -61,10 +62,20 @@ function getBadgeColorClass(contentTypeId: string): string {
   );
 }
 
-export default function TourCard({ tour, className }: TourCardProps) {
+export default function TourCard({
+  tour,
+  className,
+  onTourClick,
+}: TourCardProps) {
   const imageUrl = getImageUrl(tour);
   const contentTypeName = getContentTypeName(tour.contenttypeid);
   const badgeColorClass = getBadgeColorClass(tour.contenttypeid);
+
+  const handleClick = () => {
+    if (onTourClick) {
+      onTourClick(tour.contentid);
+    }
+  };
 
   return (
     <Link
@@ -74,6 +85,7 @@ export default function TourCard({ tour, className }: TourCardProps) {
         className
       )}
       aria-label={`${tour.title} 상세보기`}
+      onClick={handleClick}
     >
       {/* 썸네일 이미지 */}
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
