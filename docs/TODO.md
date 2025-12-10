@@ -50,6 +50,7 @@
     - [x] 공통 파라미터 처리 (serviceKey, MobileOS, MobileApp, \_type)
     - [x] 에러 처리 및 재시도 로직
     ***
+    - [x] TourApiError 커스텀 에러 클래스 구현
     - [x] 공통 유틸리티 함수 구현
       - [x] `getApiKey()` - 환경변수에서 API 키 가져오기 (NEXT_PUBLIC_TOUR_API_KEY 우선, TOUR_API_KEY 대체)
       - [x] `buildQueryParams()` - URL 쿼리 파라미터 생성
@@ -58,22 +59,15 @@
       - [x] `retryRequest()` - 재시도 로직 (지수 백오프, 최대 3회)
       - [x] `fetchApiResponse()` - API 요청 실행 (타임아웃 10초 포함)
       - [x] `normalizeItems()` - API 응답 items 배열 정규화
-    - [x] TourApiError 클래스 구현 (커스텀 에러 타입)
     - [x] 각 API 함수에 JSDoc 주석 및 예시 추가
     - [x] 타입 안전성 보장 (TypeScript strict mode)
-- [x] 타입 정의
-  - [x] `lib/types/tour.ts` 생성
-    - [x] `TourItem` 인터페이스 (목록)
-    - [x] `TourDetail` 인터페이스 (상세)
-    - [x] `TourIntro` 인터페이스 (운영정보)
-    - [x] `TourImage` 인터페이스 (이미지)
-    - [x] `PetTourInfo` 인터페이스 (반려동물)
-    ***
-    - [x] `AreaCodeItem` 인터페이스 (지역코드 조회 응답)
-    - [x] `ApiResponse<T>` 인터페이스 (공통 응답 구조)
-    - [x] `PagedResponse<T>` 인터페이스 (페이지네이션 포함 응답)
-    - [x] `CONTENT_TYPE` 상수 객체 (관광 타입 ID)
-    - [x] `ContentTypeId` 타입 정의
+- [ ] 타입 정의
+  - [ ] `lib/types/tour.ts` 생성
+    - [ ] `TourItem` 인터페이스 (목록)
+    - [ ] `TourDetail` 인터페이스 (상세)
+    - [ ] `TourIntro` 인터페이스 (운영정보)
+    - [ ] `TourImage` 인터페이스 (이미지)
+    - [ ] `PetTourInfo` 인터페이스 (반려동물)
   - [ ] `lib/types/stats.ts` 생성
     - [ ] `RegionStats` 인터페이스
     - [ ] `TypeStats` 인터페이스

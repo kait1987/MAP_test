@@ -18,8 +18,56 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SaaS 템플릿",
-  description: "Next.js + Clerk + Supabase 보일러플레이트",
+  title: {
+    default: "My Trip",
+    template: "%s | My Trip",
+  },
+  description:
+    "한국관광공사 공공 API를 활용하여 전국의 관광지 정보를 쉽게 검색하고, 지도에서 확인하며, 상세 정보를 조회할 수 있는 웹 서비스",
+  keywords: [
+    "한국 관광지",
+    "여행 정보",
+    "관광지 검색",
+    "지도",
+    "여행 계획",
+    "국내 여행",
+    "관광 정보",
+  ],
+  authors: [{ name: "My Trip" }],
+  creator: "My Trip",
+  publisher: "My Trip",
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "https://my-trip.app", // 실제 도메인으로 변경 필요
+    siteName: "My Trip",
+    title: "My Trip - 한국 관광지 정보 서비스",
+    description:
+      "전국의 관광지 정보를 쉽게 검색하고, 지도에서 확인하며, 상세 정보를 조회할 수 있는 웹 서비스",
+    // images: [{ url: "/og-image.png", width: 1200, height: 630 }], // 나중에 추가
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "My Trip - 한국 관광지 정보 서비스",
+    description:
+      "전국의 관광지 정보를 쉽게 검색하고, 지도에서 확인하며, 상세 정보를 조회할 수 있는 웹 서비스",
+    // images: ["/og-image.png"], // 나중에 추가
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    // google: "your-google-verification-code", // 나중에 추가
+    // yandex: "your-yandex-verification-code", // 나중에 추가
+  },
 };
 
 /**
