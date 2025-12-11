@@ -44,7 +44,7 @@ import BookmarkButton from "@/components/bookmarks/bookmark-button";
 
 // 타입 가드 함수
 function isError(error: unknown): error is Error {
-  return error instanceof Error;
+  return error instanceof globalThis.Error;
 }
 
 /**
@@ -389,9 +389,11 @@ interface TourDetailPageProps {
 function extractContentId(params: {
   contentId?: string | string[];
 }): string | undefined {
-  // 디버깅: params 확인
-  console.log("[extractContentId] params:", JSON.stringify(params, null, 2));
-  console.log("[extractContentId] params.contentId:", params.contentId);
+  // 디버깅: params 확인 (개발 환경에서만)
+  if (process.env.NODE_ENV === "development") {
+    console.log("[extractContentId] params:", JSON.stringify(params, null, 2));
+    console.log("[extractContentId] params.contentId:", params.contentId);
+  }
 
   // params 자체가 없거나 contentId 속성이 없는 경우
   if (!params || !params.contentId) {
@@ -458,9 +460,11 @@ export async function generateMetadata({
   try {
     // 관광지 정보 조회
     const trimmedContentId = contentId.trim();
-    console.log("[generateMetadata] getDetailCommon 호출:", {
-      contentId: trimmedContentId,
-    });
+    if (process.env.NODE_ENV === "development") {
+      console.log("[generateMetadata] getDetailCommon 호출:", {
+        contentId: trimmedContentId,
+      });
+    }
 
     if (!trimmedContentId) {
       console.error("[generateMetadata] contentId가 빈 문자열입니다.");
