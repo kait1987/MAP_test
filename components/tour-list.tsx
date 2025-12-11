@@ -150,7 +150,6 @@ export default function TourList({
             tour={tour}
             onTourClick={onTourClick}
             priority={index < 3} // 첫 3개 카드는 priority 로딩 (above-the-fold)
-            role="listitem"
           />
         ))}
       </div>

@@ -43,6 +43,8 @@ export interface TourItem {
   zipcode?: string; // 우편번호
   dist?: string; // 거리
   mlevel?: string; // 맵레벨
+  // 반려동물 정보 (클라이언트 사이드에서 추가)
+  petInfo?: PetTourInfo; // 반려동물 동반 정보 (detailPetTour2 API로 조회)
 }
 
 /**

@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -91,16 +90,6 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
     // URL 업데이트 (서버 컴포넌트 재렌더링 유도)
     router.push(`/?${params.toString()}`);
   };
-
-  /**
-   * 필터 초기화
-   */
-  const handleReset = () => {
-    router.push("/");
-  };
-
-  // 필터가 적용되어 있는지 확인
-  const hasActiveFilters = currentAreaCode || currentContentTypeId || currentArrange !== "C" || currentPetAllowed;
 
   return (
     <section
@@ -189,20 +178,33 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
                     <Switch
                       checked={currentPetAllowed}
                       onCheckedChange={(checked) => {
-                        handleFilterChange("petAllowed", checked ? "true" : undefined);
-                        // 토글이 꺼지면 크기 필터도 제거
-                        if (!checked) {
-                          handleFilterChange("petSize", undefined);
+                        console.log("[TourFilters] 반려동물 필터 변경:", checked);
+                        const params = new URLSearchParams(searchParams.toString());
+                        
+                        if (checked) {
+                          // 스위치 켜기: petAllowed 추가
+                          params.set("petAllowed", "true");
+                        } else {
+                          // 스위치 끄기: petAllowed와 petSize 모두 제거
+                          params.delete("petAllowed");
+                          params.delete("petSize");
                         }
+                        
+                        // pageNo는 필터 변경 시 1로 리셋
+                        params.delete("pageNo");
+                        
+                        // URL 업데이트 (Next.js가 자동으로 서버 컴포넌트 재렌더링)
+                        const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+                        console.log("[TourFilters] 새 URL:", newUrl);
+                        router.push(newUrl);
                       }}
-                      disabled
                       aria-label="반려동물 동반 가능 필터"
                     />
                     <span className="text-sm text-muted-foreground">반려동물 동반</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>상세페이지에서 반려동물 정보를 확인할 수 있습니다</p>
+                  <p>반려동물 동반 가능한 관광지만 표시합니다</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -212,7 +214,6 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
                 onValueChange={(value) =>
                   handleFilterChange("petSize", value === "all" ? undefined : value)
                 }
-                disabled
               >
                 <SelectTrigger className="w-[100px] md:w-[120px]">
                   <SelectValue />
@@ -227,19 +228,6 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
             )}
           </div>
         </div>
-
-        {/* 필터 초기화 버튼 */}
-        {hasActiveFilters && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            className="w-full md:w-auto"
-            aria-label="필터 초기화"
-          >
-            초기화
-          </Button>
-        )}
       </div>
     </section>
   );

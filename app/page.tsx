@@ -17,6 +17,7 @@ import {
   getAreaBasedList,
   getAreaCode,
   searchKeyword,
+  getDetailPetTour,
 } from "@/lib/api/tour-api";
 import { CONTENT_TYPE } from "@/lib/types/tour";
 import { parseFilterParams, DEFAULT_FILTERS } from "@/lib/types/filter";
@@ -49,6 +50,7 @@ async function TourListData({
   try {
     // searchParams에서 필터 파라미터 추출
     const filters = parseFilterParams(searchParams);
+    console.log("[TourListData] 필터 파라미터:", { petAllowed: filters.petAllowed, petSize: filters.petSize });
 
     // 기본값 설정
     const areaCode = filters.areaCode || "1"; // 서울
@@ -78,19 +80,41 @@ async function TourListData({
       });
     }
 
+    // 반려동물 필터가 활성화되어 있으면 반려동물 정보 가져오기
+    let toursWithPetInfo = result.items;
+    if (filters.petAllowed) {
+      console.log("[TourListData] 반려동물 필터 활성화, 반려동물 정보 가져오기 시작");
+      // 병렬로 모든 관광지의 반려동물 정보 가져오기
+      const petInfoPromises = result.items.map((tour) =>
+        getDetailPetTour({ contentId: tour.contentid }).catch(() => null)
+      );
+      const petInfos = await Promise.all(petInfoPromises);
+
+      // 반려동물 정보를 TourItem에 추가
+      toursWithPetInfo = result.items.map((tour, index) => ({
+        ...tour,
+        petInfo: petInfos[index] || undefined,
+      }));
+      console.log("[TourListData] 반려동물 정보 가져오기 완료:", toursWithPetInfo.length, "개 항목");
+    } else {
+      console.log("[TourListData] 반려동물 필터 비활성화, 전체 목록 반환:", toursWithPetInfo.length, "개 항목");
+    }
+
     // 디버깅: API 응답 확인 (이미지 URL 포함)
-    if (result.items.length > 0) {
-      const firstItem = result.items[0];
+    if (toursWithPetInfo.length > 0) {
+      const firstItem = toursWithPetInfo[0];
       console.log("[TourListData] API 응답 요약:", {
-        itemsCount: result.items.length,
+        itemsCount: toursWithPetInfo.length,
         totalCount: result.totalCount,
+        petFilterActive: filters.petAllowed,
         firstItem: {
           contentid: firstItem.contentid,
           title: firstItem.title,
           firstimage: firstItem.firstimage || "(없음)",
           firstimage2: firstItem.firstimage2 || "(없음)",
+          hasPetInfo: !!firstItem.petInfo,
         },
-        imagesCount: result.items.filter(
+        imagesCount: toursWithPetInfo.filter(
           (item) => item.firstimage || item.firstimage2
         ).length,
       });
@@ -98,12 +122,13 @@ async function TourListData({
 
     return (
       <HomeContent
-        tours={result.items}
+        tours={toursWithPetInfo}
         pagination={{
           currentPage: result.pageNo,
           totalPages: result.totalPages,
           totalCount: result.totalCount,
         }}
+        filters={filters}
       />
     );
   } catch (error) {

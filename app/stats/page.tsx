@@ -17,7 +17,13 @@ import { Error } from "@/components/ui/error";
 import StatsSummary, {
   StatsSummarySkeleton,
 } from "@/components/stats/stats-summary";
-import { getStatsSummary } from "@/lib/api/stats-api";
+import RegionChart, {
+  RegionChartSkeleton,
+} from "@/components/stats/region-chart";
+import TypeChart, {
+  TypeChartSkeleton,
+} from "@/components/stats/type-chart";
+import { getStatsSummary, getRegionStats, getTypeStats } from "@/lib/api/stats-api";
 
 /**
  * 통계 섹션 스켈레톤 UI
@@ -28,17 +34,11 @@ function StatsSkeleton() {
       {/* 통계 요약 카드 스켈레톤 */}
       <StatsSummarySkeleton />
 
-      {/* 차트 스켈레톤 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-lg border bg-card p-6">
-          <Skeleton className="h-6 w-32 mb-4" />
-          <Skeleton className="h-[400px] w-full" />
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <Skeleton className="h-6 w-32 mb-4" />
-          <Skeleton className="h-[400px] w-full" />
-        </div>
-      </div>
+      {/* 지역별 분포 차트 스켈레톤 */}
+      <RegionChartSkeleton />
+
+      {/* 타입별 분포 차트 스켈레톤 */}
+      <TypeChartSkeleton />
     </div>
   );
 }
@@ -49,39 +49,27 @@ function StatsSkeleton() {
  */
 async function StatsData() {
   try {
-    // 통계 데이터 수집
-    const summary = await getStatsSummary();
+    // 통계 데이터 수집 (병렬 호출)
+    const [summary, regionStats, typeStats] = await Promise.all([
+      getStatsSummary(),
+      getRegionStats(),
+      getTypeStats(),
+    ]);
 
     return (
       <div className="space-y-8">
         {/* 통계 요약 카드 */}
         <StatsSummary summary={summary} />
 
-        {/* 지역별 분포 차트 영역 (향후 components/stats/region-chart.tsx 추가) */}
-        <section
-          className="rounded-lg border bg-card p-6 md:p-8"
-          aria-label="지역별 관광지 분포"
-        >
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            지역별 관광지 분포
-          </h2>
-          <p className="text-muted-foreground">
-            지역별 관광지 분포 차트가 여기에 표시됩니다.
-          </p>
-        </section>
+        {/* 지역별 분포 차트 */}
+        <Suspense fallback={<RegionChartSkeleton />}>
+          <RegionChart regionStats={regionStats} />
+        </Suspense>
 
-        {/* 타입별 분포 차트 영역 (향후 components/stats/type-chart.tsx 추가) */}
-        <section
-          className="rounded-lg border bg-card p-6 md:p-8"
-          aria-label="타입별 관광지 분포"
-        >
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            타입별 관광지 분포
-          </h2>
-          <p className="text-muted-foreground">
-            타입별 관광지 분포 차트가 여기에 표시됩니다.
-          </p>
-        </section>
+        {/* 타입별 분포 차트 */}
+        <Suspense fallback={<TypeChartSkeleton />}>
+          <TypeChart typeStats={typeStats} />
+        </Suspense>
       </div>
     );
   } catch (err: unknown) {

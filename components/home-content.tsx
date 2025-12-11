@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TourItem } from "@/lib/types/tour";
+import type { FilterParams } from "@/lib/types/filter";
 import TourList from "@/components/tour-list";
 import NaverMap from "@/components/naver-map";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export interface HomeContentProps {
     totalPages: number;
     totalCount: number;
   };
+  filters?: FilterParams;
 }
 
 export default function HomeContent({
@@ -38,7 +40,39 @@ export default function HomeContent({
   errorType = "api",
   onRetry,
   pagination,
+  filters,
 }: HomeContentProps) {
+  // 반려동물 필터링 로직
+  const filteredTours = filters?.petAllowed
+    ? tours.filter((tour) => {
+        // 반려동물 정보가 없으면 제외
+        if (!tour.petInfo) {
+          return false;
+        }
+
+        // 반려동물 동반 가능 여부 확인
+        const petAllowed = tour.petInfo.chkpetleash;
+        if (!petAllowed || petAllowed.trim() === "" || petAllowed === "불가") {
+          return false;
+        }
+
+        // 크기 필터 확인
+        if (filters.petSize && filters.petSize !== "all") {
+          const petSize = tour.petInfo.chkpetsize?.toLowerCase() || "";
+          const sizeMap: Record<string, string[]> = {
+            small: ["소형", "소", "small"],
+            medium: ["중형", "중", "medium"],
+            large: ["대형", "대", "large"],
+          };
+          const allowedSizes = sizeMap[filters.petSize] || [];
+          if (!allowedSizes.some((size) => petSize.includes(size))) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+    : tours;
   const router = useRouter();
   const [selectedTourId, setSelectedTourId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
@@ -68,7 +102,7 @@ export default function HomeContent({
         {/* 관광지 목록 영역 (좌측) */}
         <section className="lg:col-span-1" aria-label="관광지 목록">
           <TourList
-            tours={tours}
+            tours={filteredTours}
             isLoading={isLoading}
             error={error}
             errorType={errorType}
@@ -82,7 +116,7 @@ export default function HomeContent({
         {/* 지도 영역 (우측) */}
         <section className="lg:col-span-1 min-h-[600px]" aria-label="지도">
           <NaverMap
-            tours={tours}
+            tours={filteredTours}
             selectedTourId={selectedTourId}
             onTourSelect={setSelectedTourId}
             className="h-full"
@@ -112,7 +146,7 @@ export default function HomeContent({
         </div>
         {activeTab === "list" && (
           <TourList
-            tours={tours}
+            tours={filteredTours}
             isLoading={isLoading}
             error={error}
             errorType={errorType}
@@ -123,7 +157,7 @@ export default function HomeContent({
         )}
         {activeTab === "map" && (
           <NaverMap
-            tours={tours}
+            tours={filteredTours}
             selectedTourId={selectedTourId}
             onTourSelect={setSelectedTourId}
             className="min-h-[400px]"

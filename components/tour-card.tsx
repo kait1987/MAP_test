@@ -223,14 +223,15 @@ export default function TourCard({
             <span className="text-sm font-medium">이미지 없음</span>
           </div>
         )}
-        {/* 반려동물 뱃지 (향후 detailPetTour2 API 연동 시 표시) */}
-        {/* 현재는 UI만 준비하고 실제 표시는 미구현 */}
-        {/* {petInfo && (
-          <div className="absolute top-2 right-2 z-10 bg-black/50 dark:bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs text-white dark:text-black flex items-center gap-1">
-            <span>🐾</span>
-            <span className="hidden sm:inline">반려동물 동반</span>
-          </div>
-        )} */}
+        {/* 반려동물 뱃지 */}
+        {tour.petInfo?.chkpetleash &&
+          tour.petInfo.chkpetleash.trim() !== "" &&
+          tour.petInfo.chkpetleash !== "불가" && (
+            <div className="absolute top-2 right-2 z-10 bg-black/50 dark:bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs text-white dark:text-black flex items-center gap-1">
+              <span>🐾</span>
+              <span className="hidden sm:inline">반려동물 동반</span>
+            </div>
+          )}
       </div>
 
       {/* 카드 내용 */}
