@@ -4355,14 +4355,70 @@
 
 ## Phase 6: 최적화 & 배포
 
-- [ ] 이미지 최적화
-  - [ ] `next.config.ts` 외부 도메인 설정
-    - [ ] 한국관광공사 이미지 도메인 추가
-    - [ ] 네이버 지도 이미지 도메인 추가
-  - [ ] Next.js Image 컴포넌트 사용 확인
-    - [ ] priority 속성 (above-the-fold)
-    - [ ] lazy loading (below-the-fold)
-    - [ ] responsive sizes 설정
+- [x] 이미지 최적화 [개발 완료: 검증 완료, PRD.md 참조, Next.js 공식 문서 참조]
+  - [x] `next.config.ts` 외부 도메인 설정 [개발 완료: 검증 완료]
+    - [x] 한국관광공사 이미지 도메인 추가 [개발 완료: 검증 완료]
+      - [x] PRD.md 요구사항 확인: Phase 6 최적화 & 배포 - "이미지 최적화 (`next.config.ts` 외부 도메인 설정)" 요구사항 확인 [검증 완료: PRD.md 참조]
+      - [x] 도메인 설정 확인: next.config.ts에 5개 한국관광공사 이미지 도메인 설정 확인 (8-12줄) [검증 완료]
+        - [x] tong.visitkorea.or.kr 도메인 설정 확인 (8줄) [검증 완료]
+        - [x] www.visitkorea.or.kr 도메인 설정 확인 (9줄) [검증 완료]
+        - [x] api.visitkorea.or.kr 도메인 설정 확인 (10줄) [검증 완료]
+        - [x] cdn.visitkorea.or.kr 도메인 설정 확인 (11줄) [검증 완료]
+        - [x] image.visitkorea.or.kr 도메인 설정 확인 (12줄) [검증 완료]
+      - [x] 도메인 일치 확인: 실제 API 응답에서 사용되는 도메인과 설정된 도메인 일치 확인 [검증 완료]
+        - [x] TourItem 인터페이스 확인: firstimage, firstimage2 필드가 visitkorea.or.kr 도메인 사용 확인 [검증 완료]
+        - [x] TourImage 인터페이스 확인: originimgurl, smallimageurl 필드가 visitkorea.or.kr 도메인 사용 확인 [검증 완료]
+        - [x] unoptimized 설정 확인: tour-card.tsx에서 visitkorea.or.kr 이미지는 unoptimized로 설정 (205줄) [검증 완료]
+    - [x] 네이버 지도 이미지 도메인 추가 [개발 완료: 검증 완료]
+      - [x] 네이버 지도 확인: 네이버 지도는 JavaScript API를 사용하므로 Next.js Image 컴포넌트와 무관함 확인 [검증 완료]
+        - [x] naver-map.tsx 확인: `openapi.map.naver.com`에서 JavaScript API 스크립트 로드 확인 (151줄) [검증 완료]
+        - [x] detail-map.tsx 확인: 동일하게 JavaScript API 스크립트 로드 확인 (76줄) [검증 완료]
+        - [x] Image 컴포넌트 사용 확인: 네이버 지도 관련 컴포넌트에서 Next.js Image 컴포넌트 미사용 확인 [검증 완료]
+      - [x] 문서화: next.config.ts에 네이버 지도는 JavaScript API 사용으로 이미지 도메인 설정 불필요함을 주석으로 문서화 (15-16줄) [검증 완료]
+      - [x] 네이버 지도 타일 확인: 네이버 지도 타일은 JavaScript API가 직접 렌더링하므로 추가 불필요 확인 [검증 완료]
+  - [x] Next.js Image 컴포넌트 사용 확인 [개발 완료: 검증 완료, Next.js 공식 문서 참조]
+    - [x] priority 속성 (above-the-fold) [개발 완료: 검증 완료]
+      - [x] tour-card.tsx 확인: priority prop으로 above-the-fold 이미지에 priority 적용 확인 (202줄) [검증 완료]
+        - [x] priority prop 정의 확인: TourCardProps 인터페이스에 priority?: boolean 정의 확인 (29줄) [검증 완료]
+        - [x] priority 기본값 확인: priority 기본값 false로 설정 (107줄) [검증 완료]
+        - [x] priority 적용 확인: Image 컴포넌트에 priority={priority} 전달 확인 (202줄) [검증 완료]
+      - [x] tour-list.tsx 확인: 첫 3개 카드에 priority={index < 3}로 설정 확인 (152줄) [검증 완료]
+        - [x] PRD.md 요구사항 확인: "priority 속성 (above-the-fold)" 요구사항 확인 [검증 완료: PRD.md 참조]
+        - [x] priority 로직 확인: index < 3 조건으로 첫 3개 카드에만 priority 적용 확인 (152줄) [검증 완료]
+        - [x] Next.js 공식 문서 확인: priority 속성은 LCP(Largest Contentful Paint) 요소나 첫 화면에 보이는 이미지에 적용하여 초기 로드 성능 개선 [검증 완료: Next.js 공식 문서 참조]
+      - [x] detail-gallery.tsx 확인: 첫 번째 이미지에 priority={currentIndex === 0}로 설정 확인 (128줄) [검증 완료]
+        - [x] priority 조건 확인: currentIndex === 0일 때만 priority 적용 확인 (128줄) [검증 완료]
+        - [x] 모달 이미지 priority 확인: 모달 내 이미지에도 priority 적용 확인 (232줄) [검증 완료]
+      - [x] detail-info.tsx 확인: 상세페이지 대표 이미지에 priority prop 적용 확인 (153줄) [검증 완료]
+        - [x] priority 적용 확인: 상세페이지 대표 이미지는 항상 priority로 설정 확인 (153줄) [검증 완료]
+      - [x] Next.js 공식 문서 확인: priority 속성은 첫 화면에 보이는 이미지에만 적용하여 성능 최적화 [검증 완료: Next.js 공식 문서 참조]
+    - [x] lazy loading (below-the-fold) [개발 완료: 검증 완료]
+      - [x] tour-card.tsx 확인: priority가 false일 때 loading="lazy"로 설정 확인 (203줄) [검증 완료]
+        - [x] PRD.md 요구사항 확인: "lazy loading (below-the-fold)" 요구사항 확인 [검증 완료: PRD.md 참조]
+        - [x] lazy loading 로직 확인: priority ? undefined : "lazy"로 조건부 설정 확인 (203줄) [검증 완료]
+        - [x] Next.js 공식 문서 확인: loading="lazy"는 이미지가 뷰포트 근처에 도달할 때까지 로딩을 지연시켜 초기 페이지 로드 성능 개선 [검증 완료: Next.js 공식 문서 참조]
+      - [x] detail-gallery.tsx 확인: 서브 이미지 썸네일에 loading="lazy"로 설정 확인 (194줄) [검증 완료]
+        - [x] 썸네일 lazy loading 확인: 서브 이미지 썸네일 그리드의 모든 이미지에 loading="lazy" 적용 확인 (194줄) [검증 완료]
+        - [x] 대표 이미지 lazy loading 확인: 대표 이미지는 priority 적용으로 lazy loading 미적용 확인 (128줄) [검증 완료]
+      - [x] Next.js 공식 문서 확인: lazy loading은 이미지가 뷰포트 근처에 도달할 때까지 로딩을 지연시켜 초기 페이지 로드 성능 개선 [검증 완료: Next.js 공식 문서 참조]
+        - [x] 기본 동작 확인: Next.js Image 컴포넌트는 기본적으로 lazy loading 사용 [검증 완료: Next.js 공식 문서 참조]
+    - [x] responsive sizes 설정 [개발 완료: 검증 완료]
+      - [x] tour-card.tsx 확인: sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"로 반응형 설정 확인 (201줄) [검증 완료]
+        - [x] PRD.md 요구사항 확인: "responsive sizes 설정" 요구사항 확인 [검증 완료: PRD.md 참조]
+        - [x] sizes 값 확인: 모바일(100vw), 태블릿(50vw), 데스크톱(33vw) 반응형 sizes 설정 확인 (201줄) [검증 완료]
+        - [x] 그리드 레이아웃 일치 확인: tour-list.tsx의 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 레이아웃과 sizes 값 일치 확인 [검증 완료]
+        - [x] Next.js 공식 문서 확인: sizes 속성은 fill prop 사용 시 필수이며, 브라우저가 적절한 이미지를 선택하도록 도와줌 [검증 완료: Next.js 공식 문서 참조]
+      - [x] detail-gallery.tsx 확인: 대표 이미지 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px", 썸네일 sizes="(max-width: 768px) 50vw, 25vw"로 설정 확인 (127, 193줄) [검증 완료]
+        - [x] 대표 이미지 sizes 확인: 모바일(100vw), 태블릿(80vw), 데스크톱(1200px) 설정 확인 (127줄) [검증 완료]
+        - [x] 썸네일 sizes 확인: 모바일(50vw), 데스크톱(25vw) 설정 확인 (193줄) [검증 완료]
+        - [x] 썸네일 그리드 일치 확인: grid-cols-2 md:grid-cols-4 레이아웃과 sizes 값 일치 확인 [검증 완료]
+        - [x] 모달 이미지 sizes 확인: 모달 내 이미지에 sizes="90vw" 설정 확인 (231줄) [검증 완료]
+      - [x] detail-info.tsx 확인: sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"로 설정 확인 (152줄) [검증 완료]
+        - [x] sizes 값 확인: 상세페이지 레이아웃에 맞는 sizes 설정 확인 (152줄) [검증 완료]
+      - [x] Next.js 공식 문서 확인: sizes 속성은 브라우저가 적절한 이미지를 선택하도록 도와주며, 불필요한 큰 이미지 다운로드를 방지 [검증 완료: Next.js 공식 문서 참조]
+        - [x] sizes 예시 확인: Next.js 공식 문서의 sizes 예시와 유사한 패턴 사용 확인 [검증 완료: Next.js 공식 문서 참조]
+      - [x] 이미지 크기 최적화 확인: 실제 렌더링 크기에 맞는 sizes 설정으로 불필요한 큰 이미지 로드 방지 확인 [검증 완료]
+        - [x] 그리드 레이아웃과 sizes 일치 확인: 모든 컴포넌트에서 그리드 레이아웃과 sizes 값이 일치하는지 확인 [검증 완료]
 - [ ] 전역 에러 핸들링
   - [ ] `app/error.tsx` 생성
   - [ ] `app/global-error.tsx` 생성

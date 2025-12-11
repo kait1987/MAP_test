@@ -39,16 +39,101 @@ export interface DetailInfoProps {
 
 /**
  * 이미지 URL 가져오기 (fallback 처리)
- * firstimage 우선, 없으면 firstimage2, 둘 다 없으면 placeholder
+ * firstimage 우선, 없으면 firstimage2, 둘 다 없으면 null 반환 (로컬 fallback UI 사용)
  */
-function getImageUrl(detail: TourDetail): string {
-  if (detail.firstimage) {
-    return detail.firstimage;
+function getImageUrl(detail: TourDetail): string | null {
+  // 디버깅: 이미지 URL 확인
+  if (process.env.NODE_ENV === "development") {
+    console.group("[DetailInfo] getImageUrl 호출");
+    console.log("detail 객체:", detail);
+    console.log("contentId:", detail.contentid);
+    console.log("title:", detail.title);
+    console.log("firstimage 원본:", detail.firstimage);
+    console.log("firstimage type:", typeof detail.firstimage);
+    console.log("firstimage2 원본:", detail.firstimage2);
+    console.log("firstimage2 type:", typeof detail.firstimage2);
+    console.groupEnd();
   }
-  if (detail.firstimage2) {
-    return detail.firstimage2;
+  
+  // firstimage 확인
+  if (detail.firstimage != null && detail.firstimage !== undefined) {
+    const url = String(detail.firstimage).trim();
+    if (process.env.NODE_ENV === "development") {
+      console.log("[DetailInfo] firstimage 처리:", {
+        원본값: detail.firstimage,
+        문자열변환: url,
+        빈값체크: url === "",
+        null체크: url === "null",
+        undefined체크: url === "undefined",
+        http체크: url.startsWith("http://") || url.startsWith("https://"),
+      });
+    }
+    
+    if (url !== "" && url !== "null" && url !== "undefined" && url.toLowerCase() !== "null") {
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DetailInfo] ✅ firstimage URL 발견:", url);
+        }
+        return url;
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailInfo] ❌ 유효하지 않은 firstimage URL 형식:", url);
+      }
+    } else {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailInfo] ❌ firstimage가 빈 값 또는 null:", url);
+      }
+    }
+  } else {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[DetailInfo] ❌ firstimage가 null 또는 undefined");
+    }
   }
-  return "https://via.placeholder.com/800x450?text=No+Image";
+  
+  // firstimage2 확인
+  if (detail.firstimage2 != null && detail.firstimage2 !== undefined) {
+    const url = String(detail.firstimage2).trim();
+    if (process.env.NODE_ENV === "development") {
+      console.log("[DetailInfo] firstimage2 처리:", {
+        원본값: detail.firstimage2,
+        문자열변환: url,
+        빈값체크: url === "",
+        null체크: url === "null",
+        undefined체크: url === "undefined",
+        http체크: url.startsWith("http://") || url.startsWith("https://"),
+      });
+    }
+    
+    if (url !== "" && url !== "null" && url !== "undefined" && url.toLowerCase() !== "null") {
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DetailInfo] ✅ firstimage2 URL 발견:", url);
+        }
+        return url;
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailInfo] ❌ 유효하지 않은 firstimage2 URL 형식:", url);
+      }
+    } else {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailInfo] ❌ firstimage2가 빈 값 또는 null:", url);
+      }
+    }
+  } else {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[DetailInfo] ❌ firstimage2가 null 또는 undefined");
+    }
+  }
+  
+  if (process.env.NODE_ENV === "development") {
+    console.warn("[DetailInfo] ❌ 이미지 없음 (fallback UI 사용):", {
+      contentId: detail.contentid,
+      title: detail.title,
+      firstimage: detail.firstimage,
+      firstimage2: detail.firstimage2,
+    });
+  }
+  return null; // 로컬 fallback UI 사용
 }
 
 /**
@@ -86,6 +171,7 @@ function normalizeHomepageUrl(url: string): string {
 
 export default function DetailInfo({ detail, className }: DetailInfoProps) {
   const [copied, setCopied] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const imageUrl = getImageUrl(detail);
   const contentTypeName = getContentTypeName(detail.contenttypeid);
   const badgeColorClass = getBadgeColorClass(detail.contenttypeid);
@@ -144,14 +230,36 @@ export default function DetailInfo({ detail, className }: DetailInfoProps) {
 
       {/* 대표 이미지 */}
       <div className="relative aspect-video w-full mb-6 rounded-lg overflow-hidden bg-muted">
-        <Image
-          src={imageUrl}
-          alt={detail.title || "관광지 이미지"}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-          priority
-        />
+        {imageUrl && !imageError ? (
+          <Image
+            src={imageUrl}
+            alt={detail.title || "관광지 이미지"}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+            priority
+            onError={() => setImageError(true)}
+            unoptimized={imageUrl.includes("visitkorea.or.kr") || imageUrl.includes("tong.visitkorea.or.kr")}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-muted to-muted/50 text-muted-foreground">
+            <svg
+              className="w-24 h-24 mb-4 opacity-50"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="text-base font-medium">이미지 없음</span>
+          </div>
+        )}
       </div>
 
       {/* 관광 타입 및 카테고리 뱃지 */}

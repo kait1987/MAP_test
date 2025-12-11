@@ -42,8 +42,25 @@ async function TourDetailData({ contentId }: { contentId: string }) {
     }
     
     const trimmedContentId = contentId.trim();
-    console.log("[TourDetailData] getDetailCommon 호출:", { contentId: trimmedContentId });
-    const detail = await getDetailCommon({ contentId: trimmedContentId });
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TourDetailData] getDetailCommon 호출:", { contentId: trimmedContentId });
+    }
+    // contentId만 전달 (API가 기본적으로 모든 정보를 반환)
+    const detail = await getDetailCommon({ 
+      contentId: trimmedContentId,
+    });
+    
+    // 디버깅: 이미지 URL 확인
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TourDetailData] detail 이미지 정보:", {
+        contentId: detail.contentid,
+        title: detail.title,
+        firstimage: detail.firstimage,
+        firstimage2: detail.firstimage2,
+        firstimageType: typeof detail.firstimage,
+        firstimage2Type: typeof detail.firstimage2,
+      });
+    }
     
     // 운영 정보는 선택 사항이므로 에러가 발생해도 계속 진행
     let intro: TourIntro | null = null;
@@ -53,8 +70,8 @@ async function TourDetailData({ contentId }: { contentId: string }) {
         contentTypeId: detail.contenttypeid,
       });
     } catch (introError) {
-      console.warn("운영 정보 로드 실패 (계속 진행):", introError);
       // 운영 정보가 없어도 상세페이지는 표시 가능
+      // 에러 로깅 제거 (source map 경고 방지)
     }
     
     // 이미지 목록도 선택 사항이므로 에러가 발생해도 계속 진행
@@ -62,8 +79,8 @@ async function TourDetailData({ contentId }: { contentId: string }) {
     try {
       images = await getDetailImage({ contentId: detail.contentid });
     } catch (imageError) {
-      console.warn("이미지 목록 로드 실패 (계속 진행):", imageError);
       // 이미지가 없어도 상세페이지는 표시 가능
+      // 에러 로깅 제거 (source map 경고 방지)
     }
     
     // 반려동물 정보도 선택 사항이므로 에러가 발생해도 계속 진행
@@ -71,8 +88,8 @@ async function TourDetailData({ contentId }: { contentId: string }) {
     try {
       petInfo = await getDetailPetTour({ contentId: detail.contentid });
     } catch (petError) {
-      console.warn("반려동물 정보 로드 실패 (계속 진행):", petError);
       // 반려동물 정보가 없어도 상세페이지는 표시 가능
+      // 에러 로깅 제거 (source map 경고 방지)
     }
     
     // 추천 관광지도 선택 사항이므로 에러가 발생해도 계속 진행
@@ -92,13 +109,15 @@ async function TourDetailData({ contentId }: { contentId: string }) {
         (tour) => tour.contentid !== detail.contentid
       ).slice(0, 6); // 최대 6개
     } catch (recommendError) {
-      console.warn("추천 관광지 로드 실패 (계속 진행):", recommendError);
       // 추천 관광지가 없어도 상세페이지는 표시 가능
+      // 에러 로깅 제거 (source map 경고 방지)
     }
     
     return <TourDetailContent detail={detail} intro={intro} images={images} petInfo={petInfo} recommendations={recommendations} />;
   } catch (err: unknown) {
-    console.error("관광지 상세 정보 로드 실패:", err);
+    if (process.env.NODE_ENV === "development") {
+      console.error("관광지 상세 정보 로드 실패:", err);
+    }
     
     // 에러 메시지 추출
     let errorMessage = "";
@@ -232,7 +251,9 @@ function extractContentId(params: { contentId?: string | string[] }): string | u
   
   // params 자체가 없거나 contentId 속성이 없는 경우
   if (!params || !params.contentId) {
-    console.warn("[extractContentId] params 또는 contentId가 없습니다.");
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[extractContentId] params 또는 contentId가 없습니다.");
+    }
     return undefined;
   }
   
@@ -248,7 +269,9 @@ function extractContentId(params: { contentId?: string | string[] }): string | u
 
   // 유효성 검사
   if (!result || result.trim() === "" || result === "undefined" || result === "null") {
-    console.warn("[extractContentId] 유효하지 않은 contentId:", result);
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[extractContentId] 유효하지 않은 contentId:", result);
+    }
     return undefined;
   }
   
@@ -271,7 +294,9 @@ export async function generateMetadata({
 
   // contentId 검증
   if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
-    console.warn("[generateMetadata] contentId 검증 실패:", { contentId, type: typeof contentId });
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[generateMetadata] contentId 검증 실패:", { contentId, type: typeof contentId });
+    }
     return {
       title: "관광지 정보 | My Trip",
       description: "관광지 상세 정보를 확인하세요.",
@@ -338,7 +363,9 @@ export async function generateMetadata({
       },
     };
   } catch (error) {
-    console.error("메타데이터 생성 실패:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("메타데이터 생성 실패:", error);
+    }
     // 에러 발생 시 기본 메타데이터 반환
     return {
       title: "관광지 정보 | My Trip",
@@ -362,7 +389,9 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
   // contentId 검증
   if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
-    console.warn("[TourDetailPage] contentId 검증 실패:", { contentId, type: typeof contentId });
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[TourDetailPage] contentId 검증 실패:", { contentId, type: typeof contentId });
+    }
     notFound();
   }
 

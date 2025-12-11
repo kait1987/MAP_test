@@ -182,10 +182,12 @@ function handleApiError(
   error: unknown,
   context?: { endpoint?: string; params?: Record<string, unknown> }
 ): TourApiError {
-  console.group("Tour API Error");
-  console.error("Context:", context);
-  console.error("Error:", error);
-  console.groupEnd();
+  if (process.env.NODE_ENV === "development") {
+    console.group("Tour API Error");
+    console.error("Context:", context);
+    console.error("Error:", error);
+    console.groupEnd();
+  }
 
   if (error instanceof TourApiError) {
     return error;
@@ -295,8 +297,21 @@ async function fetchApiResponse(
       // API 응답 헤더 확인
       if (data.response?.header?.resultCode !== "0000") {
         const resultMsg = data.response?.header?.resultMsg || "알 수 없는 에러";
+        const resultCode = data.response?.header?.resultCode;
+        
+        // 디버깅: API 에러 상세 정보
+        if (process.env.NODE_ENV === "development") {
+          console.error("[fetchApiResponse] API 응답 에러:", {
+            endpoint,
+            resultCode,
+            resultMsg,
+            params: apiParams,
+            responseHeader: data.response?.header,
+          });
+        }
+        
         throw new TourApiError(
-          `API 응답 에러: ${resultMsg}`,
+          `API 응답 에러: ${resultMsg} (코드: ${resultCode})`,
           undefined,
           endpoint
         );
@@ -331,9 +346,18 @@ async function fetchApiResponse(
  * @param items - API 응답의 items (단일 객체, 배열, 또는 null)
  * @returns 항목 배열
  */
-function normalizeItems<T>(items: T | T[] | null | undefined): T[] {
+function normalizeItems<T>(items: T | T[] | { item: T | T[] } | null | undefined): T[] {
   if (!items) {
     return [];
+  }
+
+  // items.item 구조를 처리 (한국관광공사 API가 때때로 이 구조로 응답)
+  if (typeof items === 'object' && items !== null && 'item' in items) {
+    const innerItems = (items as { item: T | T[] }).item;
+    if (innerItems === null || innerItems === undefined) {
+      return [];
+    }
+    return Array.isArray(innerItems) ? innerItems : [innerItems];
   }
 
   if (Array.isArray(items)) {
@@ -468,8 +492,39 @@ export async function getAreaBasedList(params: {
   }
 
   const response = await fetchApiResponse(endpoint, apiParams);
+  
+  // 디버깅: API 응답 구조 확인
+  if (process.env.NODE_ENV === "development") {
+    console.log("[getAreaBasedList] API 응답 구조:", {
+      hasResponse: !!response,
+      hasResponseBody: !!response?.response?.body,
+      bodyKeys: response?.response?.body ? Object.keys(response.response.body) : [],
+      itemsType: typeof response?.response?.body?.items,
+      itemsIsArray: Array.isArray(response?.response?.body?.items),
+      // items.item 구조 확인 (한국관광공사 API는 때때로 items.item 형태로 응답)
+      hasItemsItem: !!(response?.response?.body?.items as any)?.item,
+      itemsItemType: typeof (response?.response?.body?.items as any)?.item,
+      itemsItemIsArray: Array.isArray((response?.response?.body?.items as any)?.item),
+      rawItems: response?.response?.body?.items,
+    });
+  }
+
+  // 한국관광공사 API는 items.item 또는 items 형태로 응답할 수 있음
+  let rawItems = response.response.body.items;
+  if (rawItems && typeof rawItems === "object" && !Array.isArray(rawItems) && "item" in rawItems) {
+    // items.item 형태인 경우
+    rawItems = (rawItems as any).item;
+    if (process.env.NODE_ENV === "development") {
+      console.log("[getAreaBasedList] items.item 구조 사용:", {
+        itemType: typeof rawItems,
+        itemIsArray: Array.isArray(rawItems),
+        firstItem: Array.isArray(rawItems) ? rawItems[0] : rawItems,
+      });
+    }
+  }
+
   const items = normalizeItems(
-    (response.response.body.items as unknown) as TourItem | TourItem[]
+    (rawItems as unknown) as TourItem | TourItem[]
   );
 
   // 페이지네이션 정보 추출
@@ -477,6 +532,16 @@ export async function getAreaBasedList(params: {
   const numOfRows = response.response.body.numOfRows || params.numOfRows || 12;
   const pageNo = response.response.body.pageNo || params.pageNo || 1;
   const totalPages = Math.ceil(totalCount / numOfRows);
+
+  // 디버깅: 파싱된 items 확인
+  if (process.env.NODE_ENV === "development" && items.length > 0) {
+    console.log("[getAreaBasedList] 파싱된 첫 번째 항목:", {
+      contentid: items[0].contentid,
+      title: items[0].title,
+      firstimage: items[0].firstimage,
+      fullItem: items[0],
+    });
+  }
 
   return {
     items,
@@ -618,36 +683,38 @@ export async function getDetailCommon(params: {
     );
   }
 
+  // 한국관광공사 API는 contentId만 필수 파라미터
+  // PRD 4.1 참고: detailCommon2는 serviceKey, MobileOS, MobileApp, contentId만 필요
+  // 추가 파라미터는 API가 지원하지 않을 수 있으므로 contentId만 전달
   const apiParams: Record<string, string | number | undefined> = {
     contentId: params.contentId.trim(),
   };
 
+  // contentTypeId는 선택사항이지만 API가 지원하는 경우에만 추가
   if (params.contentTypeId) {
     apiParams.contentTypeId = params.contentTypeId;
   }
-  if (params.defaultYN) {
-    apiParams.defaultYN = params.defaultYN;
-  }
-  if (params.firstImageYN) {
-    apiParams.firstImageYN = params.firstImageYN;
-  }
-  if (params.areacodeYN) {
-    apiParams.areacodeYN = params.areacodeYN;
-  }
-  if (params.catcodeYN) {
-    apiParams.catcodeYN = params.catcodeYN;
-  }
-  if (params.addrinfoYN) {
-    apiParams.addrinfoYN = params.addrinfoYN;
-  }
-  if (params.mapinfoYN) {
-    apiParams.mapinfoYN = params.mapinfoYN;
-  }
-  if (params.overviewYN) {
-    apiParams.overviewYN = params.overviewYN;
-  }
 
   const response = await fetchApiResponse(endpoint, apiParams);
+  
+  // 디버깅: API 응답 구조 확인
+  if (process.env.NODE_ENV === "development") {
+    console.group("[getDetailCommon] API 응답 구조");
+    console.log("contentId:", params.contentId);
+    console.log("response.response.body:", response.response.body);
+    console.log("response.response.body.items:", response.response.body.items);
+    console.log("items type:", typeof response.response.body.items);
+    console.log("items isArray:", Array.isArray(response.response.body.items));
+    if (response.response.body.items) {
+      console.log("items keys:", Object.keys(response.response.body.items));
+      if (response.response.body.items.item) {
+        console.log("items.item:", response.response.body.items.item);
+        console.log("items.item[0]:", Array.isArray(response.response.body.items.item) ? response.response.body.items.item[0] : response.response.body.items.item);
+      }
+    }
+    console.groupEnd();
+  }
+  
   const items = normalizeItems(
     (response.response.body.items as unknown) as TourDetail | TourDetail[]
   );
@@ -658,6 +725,26 @@ export async function getDetailCommon(params: {
       undefined,
       endpoint
     );
+  }
+
+  // 디버깅: 파싱된 첫 번째 항목 확인
+  if (process.env.NODE_ENV === "development") {
+    console.group("[getDetailCommon] 파싱된 첫 번째 항목");
+    console.log("전체 항목:", items[0]);
+    console.log("contentId:", items[0].contentid);
+    console.log("title:", items[0].title);
+    console.log("firstimage:", items[0].firstimage);
+    console.log("firstimage type:", typeof items[0].firstimage);
+    console.log("firstimage2:", items[0].firstimage2);
+    console.log("firstimage2 type:", typeof items[0].firstimage2);
+    console.log("firstimage 값 검증:", {
+      isNull: items[0].firstimage === null,
+      isUndefined: items[0].firstimage === undefined,
+      isEmpty: items[0].firstimage === "",
+      isStringNull: items[0].firstimage === "null",
+      toString: String(items[0].firstimage),
+    });
+    console.groupEnd();
   }
 
   return items[0];

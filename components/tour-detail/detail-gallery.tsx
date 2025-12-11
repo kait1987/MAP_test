@@ -33,16 +33,22 @@ export interface DetailGalleryProps {
 
 /**
  * 이미지 URL 가져오기 (fallback 처리)
- * originimgurl 우선, 없으면 smallimageurl, 둘 다 없으면 placeholder
+ * originimgurl 우선, 없으면 smallimageurl, 둘 다 없으면 null 반환 (로컬 fallback UI 사용)
  */
-function getImageUrl(image: TourImage): string {
-  if (image.originimgurl) {
-    return image.originimgurl;
+function getImageUrl(image: TourImage): string | null {
+  if (image.originimgurl && image.originimgurl.trim() !== "") {
+    const url = image.originimgurl.trim();
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
   }
-  if (image.smallimageurl) {
-    return image.smallimageurl;
+  if (image.smallimageurl && image.smallimageurl.trim() !== "") {
+    const url = image.smallimageurl.trim();
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
   }
-  return "https://via.placeholder.com/800x600?text=No+Image";
+  return null; // 로컬 fallback UI 사용
 }
 
 /**
@@ -62,6 +68,7 @@ export default function DetailGallery({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalIndex, setModalIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 
   // 이미지가 없으면 섹션을 표시하지 않음
   if (!images || images.length === 0) {
@@ -119,15 +126,37 @@ export default function DetailGallery({
         {/* 대표 이미지 슬라이드 영역 */}
         <div className="relative mb-4">
           <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted">
-            <Image
-              src={getImageUrl(currentImage)}
-              alt={getImageAlt(currentImage, currentIndex)}
-              fill
-              className="object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-              priority={currentIndex === 0}
-              onClick={() => handleImageClick(currentIndex)}
-            />
+            {getImageUrl(currentImage) && !imageErrors.has(currentIndex) ? (
+              <Image
+                src={getImageUrl(currentImage)!}
+                alt={getImageAlt(currentImage, currentIndex)}
+                fill
+                className="object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+                priority={currentIndex === 0}
+                onClick={() => handleImageClick(currentIndex)}
+                onError={() => setImageErrors((prev) => new Set(prev).add(currentIndex))}
+                unoptimized={getImageUrl(currentImage)?.includes("visitkorea.or.kr") || getImageUrl(currentImage)?.includes("tong.visitkorea.or.kr")}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-muted to-muted/50 text-muted-foreground">
+                <svg
+                  className="w-24 h-24 mb-4 opacity-50"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span className="text-base font-medium">이미지 없음</span>
+              </div>
+            )}
 
             {/* 이미지 개수 표시 */}
             <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -185,14 +214,35 @@ export default function DetailGallery({
                 }}
                 aria-label={`이미지 ${index + 1} 선택`}
               >
-                <Image
-                  src={getImageUrl(image)}
-                  alt={getImageAlt(image, index)}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  loading="lazy"
-                />
+                {getImageUrl(image) && !imageErrors.has(index) ? (
+                  <Image
+                    src={getImageUrl(image)!}
+                    alt={getImageAlt(image, index)}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    loading="lazy"
+                    onError={() => setImageErrors((prev) => new Set(prev).add(index))}
+                    unoptimized={getImageUrl(image)?.includes("visitkorea.or.kr") || getImageUrl(image)?.includes("tong.visitkorea.or.kr")}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-muted to-muted/50 text-muted-foreground">
+                    <svg
+                      className="w-12 h-12 opacity-50"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                )}
               </button>
             ))}
           </div>
@@ -223,14 +273,36 @@ export default function DetailGallery({
           {/* 모달 내 이미지 */}
           <div className="relative w-full h-full flex items-center justify-center">
             <div className="relative w-full h-full max-w-6xl max-h-[80vh]">
-              <Image
-                src={getImageUrl(images[modalIndex])}
-                alt={getImageAlt(images[modalIndex], modalIndex)}
-                fill
-                className="object-contain"
-                sizes="90vw"
-                priority
-              />
+              {getImageUrl(images[modalIndex]) && !imageErrors.has(modalIndex) ? (
+                <Image
+                  src={getImageUrl(images[modalIndex])!}
+                  alt={getImageAlt(images[modalIndex], modalIndex)}
+                  fill
+                  className="object-contain"
+                  sizes="90vw"
+                  priority
+                  onError={() => setImageErrors((prev) => new Set(prev).add(modalIndex))}
+                  unoptimized={getImageUrl(images[modalIndex])?.includes("visitkorea.or.kr") || getImageUrl(images[modalIndex])?.includes("tong.visitkorea.or.kr")}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-muted to-muted/50 text-muted-foreground">
+                  <svg
+                    className="w-32 h-32 mb-4 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span className="text-lg font-medium">이미지 없음</span>
+                </div>
+              )}
 
               {/* 이미지 개수 표시 */}
               <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium">

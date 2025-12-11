@@ -33,50 +33,119 @@ export interface TourCardProps {
  * 이미지 URL 가져오기 (fallback 처리)
  * firstimage 우선, 없으면 firstimage2, 둘 다 없으면 null 반환 (로컬 fallback UI 사용)
  * 빈 문자열 체크 및 URL 유효성 검사 추가
+ * 한국관광공사 API는 절대 URL을 반환하므로 그대로 사용
  */
 function getImageUrl(tour: TourItem): string | null {
   // firstimage 확인
-  if (tour.firstimage && tour.firstimage.trim() !== "") {
-    const url = tour.firstimage.trim();
-    // URL 형식 검증 (http:// 또는 https://로 시작)
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
+  if (tour.firstimage != null) {
+    const url = String(tour.firstimage).trim();
+    // 빈 문자열, "null", "undefined" 문자열 체크
+    if (
+      url !== "" &&
+      url !== "null" &&
+      url !== "undefined" &&
+      url.toLowerCase() !== "null"
+    ) {
+      // 절대 URL (http:// 또는 https://로 시작)
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[TourCard] firstimage URL 발견:", {
+            contentId: tour.contentid,
+            title: tour.title,
+            url,
+          });
+        }
+        return url;
+      }
+      // 개발 환경에서만 로깅
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[TourCard] 유효하지 않은 firstimage URL 형식:", {
+          contentId: tour.contentid,
+          title: tour.title,
+          url,
+          urlType: typeof tour.firstimage,
+        });
+      }
+    } else {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[TourCard] firstimage가 빈 값:", {
+          contentId: tour.contentid,
+          title: tour.title,
+          rawValue: tour.firstimage,
+          url,
+        });
+      }
     }
-    // 개발 환경에서만 로깅
+  } else {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[TourCard] 유효하지 않은 firstimage URL:", {
+      console.log("[TourCard] firstimage가 null/undefined:", {
         contentId: tour.contentid,
         title: tour.title,
-        url,
       });
     }
   }
-  
+
   // firstimage2 확인
-  if (tour.firstimage2 && tour.firstimage2.trim() !== "") {
-    const url = tour.firstimage2.trim();
-    // URL 형식 검증
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
+  if (tour.firstimage2 != null) {
+    const url = String(tour.firstimage2).trim();
+    // 빈 문자열, "null", "undefined" 문자열 체크
+    if (
+      url !== "" &&
+      url !== "null" &&
+      url !== "undefined" &&
+      url.toLowerCase() !== "null"
+    ) {
+      // 절대 URL (http:// 또는 https://로 시작)
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[TourCard] firstimage2 URL 발견:", {
+            contentId: tour.contentid,
+            title: tour.title,
+            url,
+          });
+        }
+        return url;
+      }
+      // 개발 환경에서만 로깅
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[TourCard] 유효하지 않은 firstimage2 URL 형식:", {
+          contentId: tour.contentid,
+          title: tour.title,
+          url,
+          urlType: typeof tour.firstimage2,
+        });
+      }
+    } else {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[TourCard] firstimage2가 빈 값:", {
+          contentId: tour.contentid,
+          title: tour.title,
+          rawValue: tour.firstimage2,
+          url,
+        });
+      }
     }
-    // 개발 환경에서만 로깅
+  } else {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[TourCard] 유효하지 않은 firstimage2 URL:", {
+      console.log("[TourCard] firstimage2가 null/undefined:", {
         contentId: tour.contentid,
         title: tour.title,
-        url,
       });
     }
   }
-  
+
   // 이미지가 없으면 null 반환 (로컬 fallback UI 사용)
-  if (process.env.NODE_ENV === "development" && !tour.firstimage && !tour.firstimage2) {
-    console.log("[TourCard] 이미지 없음:", {
+  if (process.env.NODE_ENV === "development") {
+    console.warn("[TourCard] 이미지 없음 (fallback UI 사용):", {
       contentId: tour.contentid,
       title: tour.title,
+      firstimage: tour.firstimage,
+      firstimageType: typeof tour.firstimage,
+      firstimage2: tour.firstimage2,
+      firstimage2Type: typeof tour.firstimage2,
     });
   }
-  
+
   return null;
 }
 
@@ -106,54 +175,95 @@ export default function TourCard({
   onTourClick,
   priority = false,
 }: TourCardProps) {
+  // tour 객체 유효성 검사 및 기본값 처리
+  if (!tour) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[TourCard] tour 객체가 없습니다!");
+    }
+    return null;
+  }
+
+  // 디버깅: 전체 tour 객체 확인 (개발 환경에서만)
+  if (process.env.NODE_ENV === "development") {
+    console.log("[TourCard] 렌더링:", {
+      contentid: tour.contentid,
+      contentidType: typeof tour.contentid,
+      title: tour.title,
+      titleType: typeof tour.title,
+      addr1: tour.addr1,
+      addr1Type: typeof tour.addr1,
+      firstimage: tour.firstimage,
+      firstimageType: typeof tour.firstimage,
+      firstimage2: tour.firstimage2,
+      firstimage2Type: typeof tour.firstimage2,
+      fullTour: tour,
+    });
+  }
+
+  // 기본값 처리
+  const title = tour.title || "제목 없음";
+  const addr1 = tour.addr1 || "주소 정보 없음";
+  const contentTypeId = tour.contenttypeid || "99";
+  const contentId = tour.contentid != null ? String(tour.contentid).trim() : "";
+  const isValidContentId =
+    contentId !== "" && contentId !== "undefined" && contentId !== "null";
+
+  // contentId가 없으면 경고만 출력하고 계속 진행 (기본값 사용)
+  if (!isValidContentId) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[TourCard] 유효하지 않은 contentId 감지 (기본값 사용):", {
+        contentId,
+        tourContentId: tour.contentid,
+        tour,
+      });
+    }
+    // contentId가 없어도 카드는 표시하되, 클릭은 막음
+  }
+
   const initialImageUrl = getImageUrl(tour);
   const [imgSrc, setImgSrc] = useState<string | null>(initialImageUrl);
   const [hasError, setHasError] = useState(false);
-  const contentTypeName = getContentTypeName(tour.contenttypeid);
-  const badgeColorClass = getBadgeColorClass(tour.contenttypeid);
+  const contentTypeName = getContentTypeName(contentTypeId);
+  const badgeColorClass = getBadgeColorClass(contentTypeId);
 
-  // contentId는 TourItem의 필수 필드이므로 항상 존재해야 함
-  // 기본적으로 클릭 가능하도록 설정 (contentid가 없거나 빈 문자열인 경우만 막기)
-  const contentId = (tour.contentid || "").trim();
-  const isValidContentId = contentId !== "" && contentId !== "undefined" && contentId !== "null";
-
-  // 디버깅: tour 객체 확인 (개발 환경에서만)
-  if (process.env.NODE_ENV === "development" && !isValidContentId) {
-    console.warn("[TourCard] 유효하지 않은 contentId 감지:", {
+  // 디버깅: contentId 확인 (개발 환경에서만)
+  if (process.env.NODE_ENV === "development") {
+    console.log("[TourCard] 유효한 contentId:", {
       contentId,
-      tourContentId: tour.contentid,
-      tour: tour,
+      title,
+      hasImage: !!initialImageUrl,
+      imageUrl: initialImageUrl,
     });
   }
 
   const handleClick = (e: React.MouseEvent) => {
-    // 유효하지 않은 contentId인 경우 막기
-    if (!isValidContentId) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[TourCard] 유효하지 않은 contentId로 인해 네비게이션 차단:", {
-          contentId,
-          tourContentId: tour.contentid,
-        });
-      }
-      return;
+    // 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TourCard] 클릭 이벤트 발생:", {
+        contentId,
+        isValidContentId,
+        href: `/places/${contentId}`,
+        title,
+        event: e,
+      });
     }
 
     // onTourClick 콜백 호출 (지도 연동용)
-    if (onTourClick) {
-      onTourClick(tour.contentid);
+    // contentId를 문자열로 변환하여 전달
+    if (onTourClick && contentId) {
+      onTourClick(contentId);
     }
 
     // Link가 자동으로 네비게이션하므로 router.push는 제거
     // Link의 href가 이미 `/places/${contentId}`로 설정되어 있음
+    // preventDefault를 호출하지 않아야 Link가 정상 작동함
   };
 
   const handleImageError = () => {
     if (process.env.NODE_ENV === "development") {
       console.warn("[TourCard] 이미지 로드 실패:", {
-        contentId: tour.contentid,
-        title: tour.title,
+        contentId,
+        title,
         currentImgSrc: imgSrc,
         firstimage: tour.firstimage,
         firstimage2: tour.firstimage2,
@@ -161,18 +271,34 @@ export default function TourCard({
     }
 
     // firstimage 실패 시 firstimage2로 시도
+    const currentUrl = imgSrc ? String(imgSrc).trim() : "";
+    const firstImageUrl = tour.firstimage ? String(tour.firstimage).trim() : "";
+    const secondImageUrl = tour.firstimage2
+      ? String(tour.firstimage2).trim()
+      : "";
+
     if (
-      imgSrc === tour.firstimage?.trim() &&
-      tour.firstimage2 &&
-      tour.firstimage2.trim() !== "" &&
-      tour.firstimage2.trim().startsWith("http")
+      currentUrl === firstImageUrl &&
+      secondImageUrl !== "" &&
+      secondImageUrl !== "null" &&
+      secondImageUrl !== "undefined"
     ) {
       if (process.env.NODE_ENV === "development") {
-        console.log("[TourCard] firstimage2로 재시도:", tour.firstimage2.trim());
+        console.log("[TourCard] firstimage2로 재시도:", secondImageUrl);
       }
-      setImgSrc(tour.firstimage2.trim());
+      // firstimage2도 URL 변환 필요
+      const fallbackUrl = secondImageUrl.startsWith("http")
+        ? secondImageUrl
+        : secondImageUrl.startsWith("/")
+        ? `https://tong.visitkorea.or.kr${secondImageUrl}`
+        : `https://tong.visitkorea.or.kr/${secondImageUrl}`;
+      setImgSrc(fallbackUrl);
+      setHasError(false); // 재시도 중이므로 에러 상태 초기화
     } else {
       // 둘 다 실패하거나 이미 firstimage2를 시도한 경우 로컬 fallback UI 사용
+      if (process.env.NODE_ENV === "development") {
+        console.log("[TourCard] 모든 이미지 로드 실패, fallback UI 사용");
+      }
       setImgSrc(null);
       setHasError(true);
     }
@@ -183,7 +309,7 @@ export default function TourCard({
       href={isValidContentId ? `/places/${contentId}` : "#"}
       className={cn(
         "group block rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl overflow-hidden cursor-pointer",
-        className
+        className,
       )}
       aria-label={`${tour.title} 상세보기`}
       onClick={handleClick}
@@ -192,17 +318,29 @@ export default function TourCard({
     >
       {/* 썸네일 이미지 */}
       <div className="relative aspect-video w-full overflow-hidden bg-muted cursor-pointer">
-        {imgSrc && imgSrc.startsWith("http") && !hasError ? (
+        {imgSrc && !hasError && imgSrc.startsWith("http") ? (
           <Image
             src={imgSrc}
-            alt={tour.title || "관광지 이미지"}
+            alt={title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority={priority} // above-the-fold 이미지는 priority, 나머지는 lazy loading
             loading={priority ? undefined : "lazy"}
             onError={handleImageError}
-            unoptimized={imgSrc.includes("visitkorea.or.kr")} // 한국관광공사 이미지는 최적화 비활성화
+            onLoad={() => {
+              if (process.env.NODE_ENV === "development") {
+                console.log("[TourCard] 이미지 로드 성공:", {
+                  contentId,
+                  title,
+                  imgSrc,
+                });
+              }
+            }}
+            unoptimized={
+              imgSrc.includes("visitkorea.or.kr") ||
+              imgSrc.includes("tong.visitkorea.or.kr")
+            } // 한국관광공사 이미지는 최적화 비활성화
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-muted to-muted/50 text-muted-foreground">
@@ -241,7 +379,7 @@ export default function TourCard({
           <span
             className={cn(
               "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium",
-              badgeColorClass
+              badgeColorClass,
             )}
           >
             {contentTypeName}
@@ -250,15 +388,15 @@ export default function TourCard({
 
         {/* 관광지명 */}
         <h3 className="line-clamp-2 text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-          {tour.title}
+          {title}
         </h3>
 
         {/* 주소 */}
         <div className="flex items-start gap-2 text-sm text-muted-foreground">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-1">{tour.addr1}</p>
-            {tour.addr2 && (
+            <p className="line-clamp-1">{addr1}</p>
+            {tour.addr2 && tour.addr2.trim() !== "" && (
               <p className="line-clamp-1 text-xs">{tour.addr2}</p>
             )}
           </div>
@@ -267,4 +405,3 @@ export default function TourCard({
     </Link>
   );
 }
-

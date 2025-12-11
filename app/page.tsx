@@ -103,20 +103,40 @@ async function TourListData({
     // 디버깅: API 응답 확인 (이미지 URL 포함)
     if (toursWithPetInfo.length > 0) {
       const firstItem = toursWithPetInfo[0];
+      const itemsWithImages = toursWithPetInfo.filter(
+        (item) => item.firstimage || item.firstimage2
+      );
+      const itemsWithValidContentId = toursWithPetInfo.filter(
+        (item) => {
+          const id = item.contentid != null ? String(item.contentid).trim() : "";
+          return id !== "" && id !== "undefined" && id !== "null" && !isNaN(Number(id));
+        }
+      );
+      
       console.log("[TourListData] API 응답 요약:", {
         itemsCount: toursWithPetInfo.length,
         totalCount: result.totalCount,
         petFilterActive: filters.petAllowed,
+        imagesCount: itemsWithImages.length,
+        validContentIdCount: itemsWithValidContentId.length,
         firstItem: {
           contentid: firstItem.contentid,
+          contentidType: typeof firstItem.contentid,
           title: firstItem.title,
           firstimage: firstItem.firstimage || "(없음)",
+          firstimageType: typeof firstItem.firstimage,
           firstimage2: firstItem.firstimage2 || "(없음)",
+          firstimage2Type: typeof firstItem.firstimage2,
           hasPetInfo: !!firstItem.petInfo,
         },
-        imagesCount: toursWithPetInfo.filter(
-          (item) => item.firstimage || item.firstimage2
-        ).length,
+        // 이미지가 없는 항목 샘플
+        itemsWithoutImages: toursWithPetInfo
+          .filter((item) => !item.firstimage && !item.firstimage2)
+          .slice(0, 3)
+          .map((item) => ({
+            contentid: item.contentid,
+            title: item.title,
+          })),
       });
     }
 
