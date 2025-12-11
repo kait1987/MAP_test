@@ -13,7 +13,11 @@
  */
 
 import { Suspense } from "react";
-import { getAreaBasedList, getAreaCode, searchKeyword } from "@/lib/api/tour-api";
+import {
+  getAreaBasedList,
+  getAreaCode,
+  searchKeyword,
+} from "@/lib/api/tour-api";
 import { CONTENT_TYPE } from "@/lib/types/tour";
 import { parseFilterParams, DEFAULT_FILTERS } from "@/lib/types/filter";
 import TourFilters from "@/components/tour-filters";
@@ -74,6 +78,24 @@ async function TourListData({
       });
     }
 
+    // 디버깅: API 응답 확인 (이미지 URL 포함)
+    if (result.items.length > 0) {
+      const firstItem = result.items[0];
+      console.log("[TourListData] API 응답 요약:", {
+        itemsCount: result.items.length,
+        totalCount: result.totalCount,
+        firstItem: {
+          contentid: firstItem.contentid,
+          title: firstItem.title,
+          firstimage: firstItem.firstimage || "(없음)",
+          firstimage2: firstItem.firstimage2 || "(없음)",
+        },
+        imagesCount: result.items.filter(
+          (item) => item.firstimage || item.firstimage2
+        ).length,
+      });
+    }
+
     return (
       <HomeContent
         tours={result.items}
@@ -86,7 +108,7 @@ async function TourListData({
     );
   } catch (error) {
     console.error("관광지 목록 로드 실패:", error);
-    
+
     // 에러 타입 구분
     let errorType: "api" | "network" | "generic" = "api";
     if (error instanceof Error) {
@@ -98,7 +120,7 @@ async function TourListData({
         errorType = "network";
       }
     }
-    
+
     return (
       <HomeContent
         tours={[]}

@@ -920,38 +920,66 @@
     - [x] 데이터 없을 경우 처리 확인 (각 섹션의 조건부 렌더링)
     - [x] API 에러 처리 확인 (선택적 섹션의 에러가 전체 페이지를 막지 않음)
     - [x] 404 에러 처리 확인 (notFound() 함수 사용)
+    ***
+    - [x] Next.js 15/16 params 처리 버그 수정 (contentId undefined 에러 해결)
+      - [x] extractContentId 유틸리티 함수 구현 (배열 형태의 params.contentId 처리, 빈 문자열 체크, 타입 검증)
+      - [x] generateMetadata 함수에서 extractContentId 사용 및 추가 검증 로직
+      - [x] TourDetailPage 함수에서 extractContentId 사용 및 추가 검증 로직
+      - [x] TourDetailData 함수에서 contentId 검증 강화 (trimmedContentId 사용)
+      - [x] TourDetailPageProps 인터페이스 수정 (contentId?: string | string[])
+      - [x] 타입 안전성 개선 (배열/문자열/undefined 모두 처리, String() 변환)
+      - [x] 디버깅 로그 추가 (extractContentId, generateMetadata, TourDetailPage, TourDetailData)
+      - [x] 에러 처리 개선 (globalThis.Error 사용, 빈 문자열 체크)
+      - [x] 빌드 검증 완료 (TypeScript 컴파일 성공, 린터 에러 없음)
 
 ## Phase 4: 통계 대시보드 페이지 (`/stats`)
 
-- [ ] 페이지 기본 구조
-  - [ ] `app/stats/page.tsx` 생성
-    - [ ] 기본 레이아웃 구조
-    - [ ] 반응형 레이아웃 설정 (모바일 우선)
-    - [ ] Server Component로 구현
-- [ ] 통계 데이터 수집
-  - [ ] `lib/api/stats-api.ts` 생성
-    - [ ] `getRegionStats()` - 지역별 관광지 개수 집계
-      - [ ] `areaBasedList2` API로 각 지역별 totalCount 조회
-      - [ ] 지역 코드별로 API 호출
-    - [ ] `getTypeStats()` - 타입별 관광지 개수 집계
-      - [ ] `areaBasedList2` API로 각 타입별 totalCount 조회
-      - [ ] contentTypeId별로 API 호출
-    - [ ] `getStatsSummary()` - 전체 통계 요약
-      - [ ] 전체 관광지 수
-      - [ ] Top 3 지역
-      - [ ] Top 3 타입
-      - [ ] 마지막 업데이트 시간
-    - [ ] 병렬 API 호출로 성능 최적화
-    - [ ] 에러 처리 및 재시도 로직
-    - [ ] 데이터 캐싱 (revalidate: 3600)
-- [ ] 통계 요약 카드
-  - [ ] `components/stats/stats-summary.tsx` 생성
-    - [ ] 전체 관광지 수 표시
-    - [ ] Top 3 지역 표시 (카드 형태)
-    - [ ] Top 3 타입 표시 (카드 형태)
-    - [ ] 마지막 업데이트 시간 표시
-    - [ ] 로딩 상태 (Skeleton UI)
-    - [ ] 카드 레이아웃 디자인
+- [x] 페이지 기본 구조
+  - [x] `app/stats/page.tsx` 생성
+    - [x] 기본 레이아웃 구조
+    - [x] 반응형 레이아웃 설정 (모바일 우선)
+    - [x] Server Component로 구현
+    ***
+    - [x] app/stats/page.tsx 생성 (Server Component, async function)
+    - [x] JSDoc 주석 추가 (파일 설명, 주요 기능, PRD 참조)
+    - [x] 페이지 제목 및 설명 표시 ("통계 대시보드", "전국 관광지 현황을 한눈에 확인하세요")
+    - [x] 기본 레이아웃 구조 구현 (main, 컨테이너, 섹션 구조)
+    - [x] 반응형 레이아웃 설정 (max-w-7xl mx-auto px-4 md:px-6, 모바일 우선)
+    - [x] 통계 섹션 구조 준비 (통계 요약, 지역별 분포, 타입별 분포 섹션)
+    - [x] StatsSkeleton 함수 구현 (통계 요약 카드 스켈레톤 4개, 차트 스켈레톤 2개)
+    - [x] Suspense 경계 설정 (StatsSkeleton fallback)
+    - [x] StatsData 함수 구현 (임시 구조, 향후 API 연동 준비)
+    - [x] 에러 처리 구현 (try-catch, globalThis.Error 사용, 에러 타입 구분: api/network/generic)
+    - [x] Error 컴포넌트 통합 (에러 메시지 표시, showRetry={false})
+    - [x] 접근성 개선 (role="main", aria-label 속성, 시맨틱 HTML: main, section, h1, h2)
+    - [x] TypeScript 타입 안전성 (err: unknown, globalThis.Error 타입 가드)
+    - [x] TypeScript 컴파일 에러 수정 (globalThis.Error 사용으로 타입 에러 해결)
+    - [x] 빌드 검증 완료 (Next.js 빌드 성공, TypeScript 컴파일 성공, 린터 에러 없음)
+    - [x] 네비게이션 링크 확인 (Navbar에 /stats 링크 이미 존재 확인)
+- [x] 통계 데이터 수집
+  - [x] `lib/api/stats-api.ts` 생성
+    - [x] `getRegionStats()` - 지역별 관광지 개수 집계
+      - [x] `areaBasedList2` API로 각 지역별 totalCount 조회
+      - [x] 지역 코드별로 API 호출
+    - [x] `getTypeStats()` - 타입별 관광지 개수 집계
+      - [x] `areaBasedList2` API로 각 타입별 totalCount 조회
+      - [x] contentTypeId별로 API 호출
+    - [x] `getStatsSummary()` - 전체 통계 요약
+      - [x] 전체 관광지 수
+      - [x] Top 3 지역
+      - [x] Top 3 타입
+      - [x] 마지막 업데이트 시간
+    - [x] 병렬 API 호출로 성능 최적화
+    - [x] 에러 처리 및 재시도 로직
+    - [x] 데이터 캐싱 (revalidate: 3600)
+- [x] 통계 요약 카드
+  - [x] `components/stats/stats-summary.tsx` 생성
+    - [x] 전체 관광지 수 표시
+    - [x] Top 3 지역 표시 (카드 형태)
+    - [x] Top 3 타입 표시 (카드 형태)
+    - [x] 마지막 업데이트 시간 표시
+    - [x] 로딩 상태 (Skeleton UI)
+    - [x] 카드 레이아웃 디자인
 - [ ] 지역별 분포 차트 (Bar Chart)
   - [ ] `components/stats/region-chart.tsx` 생성
     - [ ] shadcn/ui Chart 컴포넌트 설치 (Bar)

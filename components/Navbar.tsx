@@ -1,6 +1,6 @@
 "use client";
 
-import { SignedOut, SignInButton, SignedIn, UserButton } from "@clerk/nextjs";
+import { SignedOut, SignInButton, SignedIn, UserButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useEffect } from "react";
@@ -26,8 +26,15 @@ const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isLoaded, isSignedIn } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 클라이언트에서만 마운트된 후에 조건부 렌더링
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // URL에서 검색 키워드 읽어와서 검색창에 표시
   useEffect(() => {
@@ -113,7 +120,7 @@ const Navbar = () => {
               </Link>
             ))}
             {/* 북마크 링크 (인증된 사용자만) */}
-            <SignedIn>
+            {isMounted && isLoaded && isSignedIn && (
               <Link
                 href="/bookmarks"
                 className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
@@ -124,33 +131,33 @@ const Navbar = () => {
               >
                 북마크
               </Link>
-            </SignedIn>
+            )}
           </nav>
         </div>
 
         {/* 데스크톱: 로그인 버튼 */}
         <div className="hidden md:flex md:items-center md:gap-4">
-          <SignedOut>
+          {isMounted && isLoaded && !isSignedIn && (
             <SignInButton mode="modal">
               <Button variant="default">로그인</Button>
             </SignInButton>
-          </SignedOut>
-          <SignedIn>
+          )}
+          {isMounted && isLoaded && isSignedIn && (
             <UserButton 
               userProfileMode="navigation"
               userProfileUrl="/user"
             />
-          </SignedIn>
+          )}
         </div>
 
         {/* 모바일: 햄버거 메뉴 버튼 */}
         <div className="flex md:hidden items-center gap-2">
-          <SignedIn>
+          {isMounted && isLoaded && isSignedIn && (
             <UserButton 
               userProfileMode="navigation"
               userProfileUrl="/user"
             />
-          </SignedIn>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -204,7 +211,7 @@ const Navbar = () => {
                 </Link>
               ))}
               {/* 북마크 링크 (인증된 사용자만) */}
-              <SignedIn>
+              {isMounted && isLoaded && isSignedIn && (
                 <Link
                   href="/bookmarks"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -216,17 +223,17 @@ const Navbar = () => {
                 >
                   북마크
                 </Link>
-              </SignedIn>
+              )}
             </nav>
 
             {/* 로그인 버튼 (모바일) */}
-            <SignedOut>
+            {isMounted && isLoaded && !isSignedIn && (
               <SignInButton mode="modal">
                 <Button variant="default" className="w-full">
                   로그인
                 </Button>
               </SignInButton>
-            </SignedOut>
+            )}
           </div>
         </div>
       )}

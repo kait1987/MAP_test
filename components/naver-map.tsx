@@ -235,6 +235,11 @@ export default function NaverMap({
                 font-size: 14px;
                 color: #6b7280;
               ">${escapedAddr}</p>
+              <p style="
+                margin: 0 0 12px 0;
+                font-size: 14px;
+                color: #6b7280;
+              ">${escapedAddr}</p>
               <a
                 href="/places/${tour.contentid}"
                 style="

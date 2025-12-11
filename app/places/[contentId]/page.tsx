@@ -34,7 +34,16 @@ import BookmarkButton from "@/components/bookmarks/bookmark-button";
  */
 async function TourDetailData({ contentId }: { contentId: string }) {
   try {
-    const detail = await getDetailCommon({ contentId });
+    console.log("[TourDetailData] contentId:", contentId);
+    
+    if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
+      console.error("[TourDetailData] contentId 검증 실패:", { contentId, type: typeof contentId });
+      throw new globalThis.Error("contentId는 필수 파라미터입니다.");
+    }
+    
+    const trimmedContentId = contentId.trim();
+    console.log("[TourDetailData] getDetailCommon 호출:", { contentId: trimmedContentId });
+    const detail = await getDetailCommon({ contentId: trimmedContentId });
     
     // 운영 정보는 선택 사항이므로 에러가 발생해도 계속 진행
     let intro: TourIntro | null = null;
@@ -206,7 +215,44 @@ function DetailSkeleton() {
 }
 
 interface TourDetailPageProps {
-  params: Promise<{ contentId: string }>;
+  params: Promise<{ contentId?: string | string[] }>;
+}
+
+/**
+ * contentId 추출 유틸리티 함수
+ * Next.js 15/16에서 params.contentId가 배열일 수도 있으므로 처리
+ *
+ * @param params - Next.js params 객체
+ * @returns contentId 문자열 또는 undefined
+ */
+function extractContentId(params: { contentId?: string | string[] }): string | undefined {
+  // 디버깅: params 확인
+  console.log("[extractContentId] params:", JSON.stringify(params, null, 2));
+  console.log("[extractContentId] params.contentId:", params.contentId);
+  
+  // params 자체가 없거나 contentId 속성이 없는 경우
+  if (!params || !params.contentId) {
+    console.warn("[extractContentId] params 또는 contentId가 없습니다.");
+    return undefined;
+  }
+  
+  let result: string | undefined;
+
+  // 배열인 경우 첫 번째 요소 사용
+  if (Array.isArray(params.contentId)) {
+    result = params.contentId[0];
+  } else {
+    // 문자열인 경우
+    result = String(params.contentId);
+  }
+
+  // 유효성 검사
+  if (!result || result.trim() === "" || result === "undefined" || result === "null") {
+    console.warn("[extractContentId] 유효하지 않은 contentId:", result);
+    return undefined;
+  }
+  
+  return result;
 }
 
 /**
@@ -216,19 +262,33 @@ interface TourDetailPageProps {
 export async function generateMetadata({
   params,
 }: TourDetailPageProps): Promise<Metadata> {
-  const { contentId } = await params;
+  // Next.js 15/16: params를 await하여 사용
+  const resolvedParams = await params;
+  console.log("[generateMetadata] resolvedParams:", resolvedParams);
+  
+  const contentId = extractContentId(resolvedParams);
+  console.log("[generateMetadata] extracted contentId:", contentId);
 
   // contentId 검증
-  if (!contentId || contentId.trim() === "") {
+  if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
+    console.warn("[generateMetadata] contentId 검증 실패:", { contentId, type: typeof contentId });
     return {
-      title: "관광지 정보",
+      title: "관광지 정보 | My Trip",
       description: "관광지 상세 정보를 확인하세요.",
     };
   }
 
   try {
     // 관광지 정보 조회
-    const detail = await getDetailCommon({ contentId: contentId.trim() });
+    const trimmedContentId = contentId.trim();
+    console.log("[generateMetadata] getDetailCommon 호출:", { contentId: trimmedContentId });
+    
+    if (!trimmedContentId) {
+      console.error("[generateMetadata] contentId가 빈 문자열입니다.");
+      throw new globalThis.Error("contentId는 필수 파라미터입니다.");
+    }
+    
+    const detail = await getDetailCommon({ contentId: trimmedContentId });
 
     // 절대 URL 생성 (환경변수 또는 기본값 사용)
     const siteUrl =
@@ -293,11 +353,16 @@ export async function generateMetadata({
 }
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
-  // Next.js 15: params를 await하여 사용
-  const { contentId } = await params;
+  // Next.js 15/16: params를 await하여 사용
+  const resolvedParams = await params;
+  console.log("[TourDetailPage] resolvedParams:", resolvedParams);
+  
+  const contentId = extractContentId(resolvedParams);
+  console.log("[TourDetailPage] extracted contentId:", contentId);
 
   // contentId 검증
-  if (!contentId || contentId.trim() === "") {
+  if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
+    console.warn("[TourDetailPage] contentId 검증 실패:", { contentId, type: typeof contentId });
     notFound();
   }
 

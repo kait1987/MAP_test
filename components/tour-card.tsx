@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { TourItem } from "@/lib/types/tour";
@@ -25,21 +26,58 @@ export interface TourCardProps {
   tour: TourItem;
   className?: string;
   onTourClick?: (tourId: string) => void;
+  priority?: boolean; // 이미지 priority 로딩 (above-the-fold용)
 }
 
 /**
  * 이미지 URL 가져오기 (fallback 처리)
- * firstimage 우선, 없으면 firstimage2, 둘 다 없으면 기본 이미지
+ * firstimage 우선, 없으면 firstimage2, 둘 다 없으면 null 반환 (로컬 fallback UI 사용)
+ * 빈 문자열 체크 및 URL 유효성 검사 추가
  */
-function getImageUrl(tour: TourItem): string {
-  if (tour.firstimage) {
-    return tour.firstimage;
+function getImageUrl(tour: TourItem): string | null {
+  // firstimage 확인
+  if (tour.firstimage && tour.firstimage.trim() !== "") {
+    const url = tour.firstimage.trim();
+    // URL 형식 검증 (http:// 또는 https://로 시작)
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    // 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[TourCard] 유효하지 않은 firstimage URL:", {
+        contentId: tour.contentid,
+        title: tour.title,
+        url,
+      });
+    }
   }
-  if (tour.firstimage2) {
-    return tour.firstimage2;
+  
+  // firstimage2 확인
+  if (tour.firstimage2 && tour.firstimage2.trim() !== "") {
+    const url = tour.firstimage2.trim();
+    // URL 형식 검증
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    // 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[TourCard] 유효하지 않은 firstimage2 URL:", {
+        contentId: tour.contentid,
+        title: tour.title,
+        url,
+      });
+    }
   }
-  // 기본 이미지 fallback (placeholder 이미지 URL 사용)
-  return "https://via.placeholder.com/400x225?text=No+Image";
+  
+  // 이미지가 없으면 null 반환 (로컬 fallback UI 사용)
+  if (process.env.NODE_ENV === "development" && !tour.firstimage && !tour.firstimage2) {
+    console.log("[TourCard] 이미지 없음:", {
+      contentId: tour.contentid,
+      title: tour.title,
+    });
+  }
+  
+  return null;
 }
 
 /**
@@ -66,37 +104,125 @@ export default function TourCard({
   tour,
   className,
   onTourClick,
+  priority = false,
 }: TourCardProps) {
-  const imageUrl = getImageUrl(tour);
+  const initialImageUrl = getImageUrl(tour);
+  const [imgSrc, setImgSrc] = useState<string | null>(initialImageUrl);
+  const [hasError, setHasError] = useState(false);
   const contentTypeName = getContentTypeName(tour.contenttypeid);
   const badgeColorClass = getBadgeColorClass(tour.contenttypeid);
 
-  const handleClick = () => {
+  // contentId는 TourItem의 필수 필드이므로 항상 존재해야 함
+  // 기본적으로 클릭 가능하도록 설정 (contentid가 없거나 빈 문자열인 경우만 막기)
+  const contentId = (tour.contentid || "").trim();
+  const isValidContentId = contentId !== "" && contentId !== "undefined" && contentId !== "null";
+
+  // 디버깅: tour 객체 확인 (개발 환경에서만)
+  if (process.env.NODE_ENV === "development" && !isValidContentId) {
+    console.warn("[TourCard] 유효하지 않은 contentId 감지:", {
+      contentId,
+      tourContentId: tour.contentid,
+      tour: tour,
+    });
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    // 유효하지 않은 contentId인 경우 막기
+    if (!isValidContentId) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[TourCard] 유효하지 않은 contentId로 인해 네비게이션 차단:", {
+          contentId,
+          tourContentId: tour.contentid,
+        });
+      }
+      return;
+    }
+
+    // onTourClick 콜백 호출 (지도 연동용)
     if (onTourClick) {
       onTourClick(tour.contentid);
+    }
+
+    // Link가 자동으로 네비게이션하므로 router.push는 제거
+    // Link의 href가 이미 `/places/${contentId}`로 설정되어 있음
+  };
+
+  const handleImageError = () => {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[TourCard] 이미지 로드 실패:", {
+        contentId: tour.contentid,
+        title: tour.title,
+        currentImgSrc: imgSrc,
+        firstimage: tour.firstimage,
+        firstimage2: tour.firstimage2,
+      });
+    }
+
+    // firstimage 실패 시 firstimage2로 시도
+    if (
+      imgSrc === tour.firstimage?.trim() &&
+      tour.firstimage2 &&
+      tour.firstimage2.trim() !== "" &&
+      tour.firstimage2.trim().startsWith("http")
+    ) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[TourCard] firstimage2로 재시도:", tour.firstimage2.trim());
+      }
+      setImgSrc(tour.firstimage2.trim());
+    } else {
+      // 둘 다 실패하거나 이미 firstimage2를 시도한 경우 로컬 fallback UI 사용
+      setImgSrc(null);
+      setHasError(true);
     }
   };
 
   return (
     <Link
-      href={`/places/${tour.contentid}`}
+      href={isValidContentId ? `/places/${contentId}` : "#"}
       className={cn(
-        "group block rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl overflow-hidden",
+        "group block rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl overflow-hidden cursor-pointer",
         className
       )}
       aria-label={`${tour.title} 상세보기`}
       onClick={handleClick}
+      prefetch={true}
+      style={{ textDecoration: "none", color: "inherit" }}
     >
       {/* 썸네일 이미지 */}
-      <div className="relative aspect-video w-full overflow-hidden bg-muted">
-        <Image
-          src={imageUrl}
-          alt={tour.title || "관광지 이미지"}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          loading="lazy"
-        />
+      <div className="relative aspect-video w-full overflow-hidden bg-muted cursor-pointer">
+        {imgSrc && imgSrc.startsWith("http") && !hasError ? (
+          <Image
+            src={imgSrc}
+            alt={tour.title || "관광지 이미지"}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={priority} // above-the-fold 이미지는 priority, 나머지는 lazy loading
+            loading={priority ? undefined : "lazy"}
+            onError={handleImageError}
+            unoptimized={imgSrc.includes("visitkorea.or.kr")} // 한국관광공사 이미지는 최적화 비활성화
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-muted to-muted/50 text-muted-foreground">
+            <svg
+              className="w-16 h-16 mb-2 opacity-50"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="text-sm font-medium">이미지 없음</span>
+          </div>
+        )}
         {/* 반려동물 뱃지 (향후 detailPetTour2 API 연동 시 표시) */}
         {/* 현재는 UI만 준비하고 실제 표시는 미구현 */}
         {/* {petInfo && (

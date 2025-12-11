@@ -145,12 +145,13 @@ export default function TourList({
         aria-label="관광지 목록"
       >
         {tours.map((tour, index) => (
-          <div key={tour.contentid || `tour-${index}`} role="listitem">
-            <TourCard
-              tour={tour}
-              onTourClick={onTourClick}
-            />
-          </div>
+          <TourCard
+            key={tour.contentid || `tour-${index}`}
+            tour={tour}
+            onTourClick={onTourClick}
+            priority={index < 3} // 첫 3개 카드는 priority 로딩 (above-the-fold)
+            role="listitem"
+          />
         ))}
       </div>
 
