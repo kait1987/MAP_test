@@ -283,19 +283,21 @@ async function retryRequest<T>(
  *
  * @param endpoint - API 엔드포인트
  * @param params - 쿼리 파라미터
+ * @param timeout - 타임아웃 시간 (밀리초, 기본값: REQUEST_TIMEOUT)
  * @returns API 응답 JSON
  * @throws {TourApiError} 요청 실패 시
  */
 async function fetchApiResponse(
   endpoint: string,
   params: Record<string, string | number | undefined> = {},
+  timeout: number = REQUEST_TIMEOUT,
 ): Promise<ApiResponse<unknown>> {
   const url = createRequestUrl(endpoint, params);
 
   return retryRequest(async () => {
     // AbortController로 타임아웃 구현
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
       const response = await fetch(url, {
@@ -435,7 +437,7 @@ async function fetchApiResponse(
       // AbortError는 타임아웃
       if (error instanceof Error && error.name === "AbortError") {
         throw new TourApiError(
-          `API 요청 타임아웃 (${REQUEST_TIMEOUT}ms 초과)`,
+          `API 요청 타임아웃 (${timeout}ms 초과)`,
           undefined,
           endpoint,
         );
@@ -557,6 +559,7 @@ export async function getAreaBasedList(params: {
   listYN?: "Y" | "N";
   arrange?: "A" | "B" | "C" | "D";
   modifiedtime?: string;
+  timeout?: number; // 타임아웃 시간 (밀리초, 통계 API 등 느린 응답에 사용)
 }): Promise<PagedResponse<TourItem>> {
   const endpoint = "/areaBasedList2";
 
@@ -601,7 +604,7 @@ export async function getAreaBasedList(params: {
     apiParams.modifiedtime = params.modifiedtime;
   }
 
-  const response = await fetchApiResponse(endpoint, apiParams);
+  const response = await fetchApiResponse(endpoint, apiParams, params.timeout);
 
   // 디버깅: API 응답 구조 확인
   if (process.env.NODE_ENV === "development") {

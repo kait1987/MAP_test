@@ -88,6 +88,7 @@ async function getRegionStatsInternal(): Promise<RegionStats[]> {
             contentTypeId: CONTENT_TYPE.TOURIST_SPOT, // 관광지 타입
             numOfRows: 1, // totalCount만 필요하므로 최소값
             pageNo: 1,
+            timeout: 20000, // 통계 API는 더 긴 타임아웃 사용 (20초)
           });
 
           return {
@@ -174,10 +175,13 @@ async function getTypeStatsInternal(): Promise<TypeStats[]> {
         } as Omit<TypeStats, "percentage"> & { percentage: number };
       } catch (error) {
         // 개별 타입 API 호출 실패 시 해당 타입은 제외
-        console.warn(
-          `타입 통계 조회 실패 (${contentTypeId}):`,
-          error
-        );
+        // 개발 환경에서만 로그 출력 (프로덕션에서 경고 로그 과다 방지)
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            `타입 통계 조회 실패 (${contentTypeId}):`,
+            error
+          );
+        }
         return null;
       }
     });
