@@ -153,7 +153,7 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
           title: detail.title,
           mapx: detail.mapx,
           mapy: detail.mapy,
-          error: err instanceof Error ? err.message : String(err),
+          error: err instanceof globalThis.Error ? err.message : String(err),
         });
       }
       return null;
@@ -300,8 +300,8 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
             console.error("[DetailMap] ❌ 지도 초기화 실패:", {
               contentId: detail.contentid,
               title: detail.title,
-              error: err instanceof Error ? err.message : String(err),
-              stack: err instanceof Error ? err.stack : undefined,
+              error: err instanceof globalThis.Error ? err.message : String(err),
+              stack: err instanceof globalThis.Error ? err.stack : undefined,
             });
           }
           if (isMounted) {
@@ -319,8 +319,8 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
           console.error("[DetailMap] ❌ Naver Maps API 로드 실패:", {
             contentId: detail.contentid,
             title: detail.title,
-            error: err instanceof Error ? err.message : String(err),
-            stack: err instanceof Error ? err.stack : undefined,
+            error: err instanceof globalThis.Error ? err.message : String(err),
+            stack: err instanceof globalThis.Error ? err.stack : undefined,
           });
         }
         if (isMounted) {
