@@ -33,6 +33,7 @@ import type {
   ApiResponse,
   PagedResponse,
 } from "@/lib/types/tour";
+import { isValidImageUrl } from "@/lib/utils/image";
 
 // =====================================================
 // 상수 정의
@@ -74,13 +75,22 @@ const RETRY_DELAYS = [1000, 2000, 4000]; // 1초, 2초, 4초
 // =====================================================
 
 /**
+ * API 에러 응답 타입
+ */
+interface ErrorResponse {
+  responseTime?: string;
+  resultCode: string;
+  resultMsg: string;
+}
+
+/**
  * API 에러 타입
  */
 export class TourApiError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public endpoint?: string
+    public endpoint?: string,
   ) {
     super(message);
     this.name = "TourApiError";
@@ -122,7 +132,7 @@ function getApiKey(): string {
 
   if (!apiKey) {
     throw new TourApiError(
-      "API 키가 설정되지 않았습니다. NEXT_PUBLIC_TOUR_API_KEY 또는 TOUR_API_KEY 환경변수를 설정해주세요."
+      "API 키가 설정되지 않았습니다. NEXT_PUBLIC_TOUR_API_KEY 또는 TOUR_API_KEY 환경변수를 설정해주세요.",
     );
   }
 
@@ -135,7 +145,9 @@ function getApiKey(): string {
  * @param params - 쿼리 파라미터 객체
  * @returns URL 쿼리 문자열
  */
-function buildQueryParams(params: Record<string, string | number | undefined>): string {
+function buildQueryParams(
+  params: Record<string, string | number | undefined>,
+): string {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -156,7 +168,7 @@ function buildQueryParams(params: Record<string, string | number | undefined>): 
  */
 function createRequestUrl(
   endpoint: string,
-  params: Record<string, string | number | undefined> = {}
+  params: Record<string, string | number | undefined> = {},
 ): string {
   const apiKey = getApiKey();
 
@@ -180,12 +192,21 @@ function createRequestUrl(
  */
 function handleApiError(
   error: unknown,
-  context?: { endpoint?: string; params?: Record<string, unknown> }
+  context?: { endpoint?: string; params?: Record<string, unknown> },
 ): TourApiError {
   if (process.env.NODE_ENV === "development") {
     console.group("Tour API Error");
-    console.error("Context:", context);
-    console.error("Error:", error);
+    console.log("Context:", {
+      endpoint: context?.endpoint || "unknown",
+      hasParams: !!context?.params,
+      paramKeys: context?.params ? Object.keys(context.params) : [],
+    });
+    if (error instanceof Error) {
+      console.log("Error message:", error.message);
+      // stack은 너무 길어서 제외
+    } else {
+      console.log("Error:", error);
+    }
     console.groupEnd();
   }
 
@@ -197,14 +218,14 @@ function handleApiError(
     return new TourApiError(
       `API 호출 중 에러가 발생했습니다: ${error.message}`,
       undefined,
-      context?.endpoint
+      context?.endpoint,
     );
   }
 
   return new TourApiError(
     "알 수 없는 에러가 발생했습니다.",
     undefined,
-    context?.endpoint
+    context?.endpoint,
   );
 }
 
@@ -220,7 +241,7 @@ function handleApiError(
 async function retryRequest<T>(
   fn: () => Promise<T>,
   maxRetries: number = MAX_RETRIES,
-  delays: number[] = RETRY_DELAYS
+  delays: number[] = RETRY_DELAYS,
 ): Promise<T> {
   let lastError: unknown;
 
@@ -232,7 +253,7 @@ async function retryRequest<T>(
 
       // 재시도 불가능한 에러면 즉시 throw
       if (!isRetryableError(error)) {
-        throw handleApiError(error);
+        throw handleApiError(error, {});
       }
 
       // 마지막 시도면 재시도 안 함
@@ -244,7 +265,9 @@ async function retryRequest<T>(
       const delay = delays[attempt] || delays[delays.length - 1];
 
       console.log(
-        `API 호출 실패 (시도 ${attempt + 1}/${maxRetries + 1}). ${delay}ms 후 재시도...`
+        `API 호출 실패 (시도 ${attempt + 1}/${
+          maxRetries + 1
+        }). ${delay}ms 후 재시도...`,
       );
 
       await new Promise((resolve) => setTimeout(resolve, delay));
@@ -252,7 +275,7 @@ async function retryRequest<T>(
   }
 
   // 모든 재시도 실패
-  throw handleApiError(lastError);
+  throw handleApiError(lastError, {});
 }
 
 /**
@@ -265,7 +288,7 @@ async function retryRequest<T>(
  */
 async function fetchApiResponse(
   endpoint: string,
-  params: Record<string, string | number | undefined> = {}
+  params: Record<string, string | number | undefined> = {},
 ): Promise<ApiResponse<unknown>> {
   const url = createRequestUrl(endpoint, params);
 
@@ -288,32 +311,116 @@ async function fetchApiResponse(
         throw new TourApiError(
           `API 요청 실패: ${response.status} ${response.statusText}`,
           response.status,
-          endpoint
+          endpoint,
         );
       }
 
-      const data = (await response.json()) as ApiResponse<unknown>;
+      const data = (await response.json()) as
+        | ApiResponse<unknown>
+        | ErrorResponse;
+
+      // API 에러 응답 체크 (최상위 레벨에 resultCode가 있는 경우)
+      if (
+        data &&
+        typeof data === "object" &&
+        "resultCode" in data &&
+        !("response" in data)
+      ) {
+        const errorData = data as ErrorResponse;
+        if (process.env.NODE_ENV === "development") {
+          console.log("[fetchApiResponse] API 에러 응답:", {
+            endpoint,
+            resultCode: errorData.resultCode,
+            resultMsg: errorData.resultMsg,
+            params: Object.keys(params).length > 0 ? params : "없음",
+          });
+        }
+        throw new TourApiError(
+          `API 응답 에러: ${errorData.resultMsg || "알 수 없는 에러"} (코드: ${
+            errorData.resultCode
+          })`,
+          undefined,
+          endpoint,
+        );
+      }
+
+      // API 응답 구조 검증
+      if (!data || !("response" in data) || !data.response) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[fetchApiResponse] API 응답 구조 오류:", {
+            endpoint,
+            hasData: !!data,
+            hasResponse: !!(
+              data &&
+              typeof data === "object" &&
+              "response" in data &&
+              data.response
+            ),
+            dataKeys: data && typeof data === "object" ? Object.keys(data) : [],
+            rawData: data,
+          });
+        }
+        throw new TourApiError(
+          "API 응답 구조가 올바르지 않습니다.",
+          undefined,
+          endpoint,
+        );
+      }
 
       // API 응답 헤더 확인
-      if (data.response?.header?.resultCode !== "0000") {
-        const resultMsg = data.response?.header?.resultMsg || "알 수 없는 에러";
-        const resultCode = data.response?.header?.resultCode;
-        
+      const resultCode = data.response?.header?.resultCode;
+      const resultMsg = data.response?.header?.resultMsg;
+
+      // 디버깅: API 응답 구조 확인
+      if (process.env.NODE_ENV === "development") {
+        console.log("[fetchApiResponse] API 응답 확인:", {
+          endpoint,
+          hasResponse: !!data.response,
+          hasHeader: !!data.response?.header,
+          resultCode: resultCode || "undefined",
+          resultMsg: resultMsg || "undefined",
+          headerKeys: data.response?.header
+            ? Object.keys(data.response.header)
+            : [],
+          responseKeys: data.response ? Object.keys(data.response) : [],
+          hasBody: !!data.response?.body,
+        });
+      }
+
+      // header가 없어도 body에 데이터가 있으면 정상 처리
+      // resultCode가 있고 "0000"이 아닌 경우에만 에러로 처리
+      if (resultCode && resultCode !== "0000") {
         // 디버깅: API 에러 상세 정보
         if (process.env.NODE_ENV === "development") {
-          console.error("[fetchApiResponse] API 응답 에러:", {
+          console.log("[fetchApiResponse] API 응답 에러:", {
             endpoint,
             resultCode,
             resultMsg,
-            params: apiParams,
-            responseHeader: data.response?.header,
+            params: Object.keys(params).length > 0 ? params : "없음",
+            responseHeader: data.response?.header || "없음",
           });
         }
-        
+
         throw new TourApiError(
-          `API 응답 에러: ${resultMsg} (코드: ${resultCode})`,
+          `API 응답 에러: ${
+            resultMsg || "알 수 없는 에러"
+          } (코드: ${resultCode})`,
           undefined,
-          endpoint
+          endpoint,
+        );
+      }
+
+      // resultCode가 없거나 "0000"인 경우 정상 처리
+      // (일부 API는 resultCode가 없을 수 있음)
+      if (process.env.NODE_ENV === "development" && !resultCode) {
+        console.log(
+          "[fetchApiResponse] API 응답 헤더 확인 (resultCode 없음, 정상 처리):",
+          {
+            endpoint,
+            hasResponse: !!data.response,
+            hasHeader: !!data.response?.header,
+            header: data.response?.header,
+          },
         );
       }
 
@@ -330,7 +437,7 @@ async function fetchApiResponse(
         throw new TourApiError(
           `API 요청 타임아웃 (${REQUEST_TIMEOUT}ms 초과)`,
           undefined,
-          endpoint
+          endpoint,
         );
       }
 
@@ -346,13 +453,15 @@ async function fetchApiResponse(
  * @param items - API 응답의 items (단일 객체, 배열, 또는 null)
  * @returns 항목 배열
  */
-function normalizeItems<T>(items: T | T[] | { item: T | T[] } | null | undefined): T[] {
+function normalizeItems<T>(
+  items: T | T[] | { item: T | T[] } | null | undefined,
+): T[] {
   if (!items) {
     return [];
   }
 
   // items.item 구조를 처리 (한국관광공사 API가 때때로 이 구조로 응답)
-  if (typeof items === 'object' && items !== null && 'item' in items) {
+  if (typeof items === "object" && items !== null && "item" in items) {
     const innerItems = (items as { item: T | T[] }).item;
     if (innerItems === null || innerItems === undefined) {
       return [];
@@ -364,7 +473,8 @@ function normalizeItems<T>(items: T | T[] | { item: T | T[] } | null | undefined
     return items;
   }
 
-  return [items];
+  // 단일 항목을 배열로 변환
+  return [items as T];
 }
 
 // =====================================================
@@ -401,7 +511,7 @@ export async function getAreaCode(params?: {
 
   const response = await fetchApiResponse(endpoint, apiParams);
   const items = normalizeItems(
-    (response.response.body.items as unknown) as AreaCodeItem | AreaCodeItem[]
+    response.response.body?.items as unknown as AreaCodeItem | AreaCodeItem[],
   );
 
   return items;
@@ -454,7 +564,7 @@ export async function getAreaBasedList(params: {
     throw new TourApiError(
       "areaCode와 contentTypeId는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
@@ -492,24 +602,36 @@ export async function getAreaBasedList(params: {
   }
 
   const response = await fetchApiResponse(endpoint, apiParams);
-  
+
   // 디버깅: API 응답 구조 확인
   if (process.env.NODE_ENV === "development") {
     console.group("[getAreaBasedList] API 응답 구조");
     console.log("hasResponse:", !!response);
     console.log("hasResponseBody:", !!response?.response?.body);
-    console.log("bodyKeys:", response?.response?.body ? Object.keys(response.response.body) : []);
+    console.log(
+      "bodyKeys:",
+      response?.response?.body ? Object.keys(response.response.body) : [],
+    );
     console.log("itemsType:", typeof response?.response?.body?.items);
-    console.log("itemsIsArray:", Array.isArray(response?.response?.body?.items));
-    console.log("hasItemsItem:", !!(response?.response?.body?.items as any)?.item);
-    
+    console.log(
+      "itemsIsArray:",
+      Array.isArray(response?.response?.body?.items),
+    );
+    console.log(
+      "hasItemsItem:",
+      !!(response?.response?.body?.items as any)?.item,
+    );
+
     // 첫 번째 항목의 좌표 정보 확인
-    const firstItem = Array.isArray((response?.response?.body?.items as any)?.item) 
+    const firstItem = Array.isArray(
+      (response?.response?.body?.items as any)?.item,
+    )
       ? (response?.response?.body?.items as any).item[0]
       : Array.isArray(response?.response?.body?.items)
       ? response.response.body.items[0]
-      : (response?.response?.body?.items as any)?.item || response?.response?.body?.items;
-    
+      : (response?.response?.body?.items as any)?.item ||
+        response?.response?.body?.items;
+
     if (firstItem) {
       console.log("첫 번째 항목 좌표 정보:", {
         title: firstItem.title,
@@ -526,8 +648,13 @@ export async function getAreaBasedList(params: {
   }
 
   // 한국관광공사 API는 items.item 또는 items 형태로 응답할 수 있음
-  let rawItems = response.response.body.items;
-  if (rawItems && typeof rawItems === "object" && !Array.isArray(rawItems) && "item" in rawItems) {
+  let rawItems = response.response.body?.items;
+  if (
+    rawItems &&
+    typeof rawItems === "object" &&
+    !Array.isArray(rawItems) &&
+    "item" in rawItems
+  ) {
     // items.item 형태인 경우
     rawItems = (rawItems as any).item;
     if (process.env.NODE_ENV === "development") {
@@ -539,14 +666,12 @@ export async function getAreaBasedList(params: {
     }
   }
 
-  const items = normalizeItems(
-    (rawItems as unknown) as TourItem | TourItem[]
-  );
+  const items = normalizeItems(rawItems as unknown as TourItem | TourItem[]);
 
   // 페이지네이션 정보 추출
-  const totalCount = response.response.body.totalCount || 0;
-  const numOfRows = response.response.body.numOfRows || params.numOfRows || 12;
-  const pageNo = response.response.body.pageNo || params.pageNo || 1;
+  const totalCount = response.response.body?.totalCount || 0;
+  const numOfRows = response.response.body?.numOfRows || params.numOfRows || 12;
+  const pageNo = response.response.body?.pageNo || params.pageNo || 1;
   const totalPages = Math.ceil(totalCount / numOfRows);
 
   // 디버깅: 파싱된 items 확인
@@ -562,29 +687,39 @@ export async function getAreaBasedList(params: {
       mapyType: typeof items[0].mapy,
       firstimage: items[0].firstimage,
     });
-    
+
     // 좌표가 있는 항목과 없는 항목 확인
     const itemsWithCoords = items.filter((item) => item.mapx && item.mapy);
     const itemsWithoutCoords = items.filter((item) => !item.mapx || !item.mapy);
-    
+
     // 좌표 값 샘플 확인 (변환 로직과 동일하게)
     const coordSamples = itemsWithCoords.slice(0, 3).map((item) => {
       const mapxNum = parseFloat(String(item.mapx));
       const mapyNum = parseFloat(String(item.mapy));
-      
+
       // 좌표 형식 자동 판단 (convertKATECToWGS84와 동일한 로직)
+      const mapxStr = String(item.mapx);
+      const mapyStr = String(item.mapy);
+      const mapxHasDecimal = mapxStr.includes(".") || mapxStr.includes(",");
+      const mapyHasDecimal = mapyStr.includes(".") || mapyStr.includes(",");
+
       let lng: number;
       let lat: number;
-      if (Math.abs(mapxNum) >= 100) {
-        // 이미 WGS84 소수점 좌표
+
+      if (mapxHasDecimal || mapyHasDecimal) {
+        // 소수점이 있으면 WGS84 소수점 좌표
         lng = mapxNum;
         lat = mapyNum;
-      } else {
-        // KATEC 정수형 좌표
+      } else if (Math.abs(mapxNum) >= 1000 || Math.abs(mapyNum) >= 1000) {
+        // 정수형이고 1000 이상이면 KATEC 정수형 좌표
         lng = mapxNum / 10000000;
         lat = mapyNum / 10000000;
+      } else {
+        // 정수형이고 1000 미만이면 WGS84 소수점 좌표
+        lng = mapxNum;
+        lat = mapyNum;
       }
-      
+
       return {
         title: item.title,
         contentid: item.contentid,
@@ -594,10 +729,11 @@ export async function getAreaBasedList(params: {
         mapyNum,
         변환된좌표: { lat, lng },
         한국영역내: lat >= 33 && lat <= 43 && lng >= 124 && lng <= 132,
-        좌표형식: Math.abs(mapxNum) >= 100 ? "WGS84 (소수점)" : "KATEC (정수형)",
+        좌표형식:
+          Math.abs(mapxNum) >= 100 ? "WGS84 (소수점)" : "KATEC (정수형)",
       };
     });
-    
+
     console.log("좌표 정보:", {
       좌표있음: itemsWithCoords.length,
       좌표없음: itemsWithoutCoords.length,
@@ -654,7 +790,7 @@ export async function searchKeyword(params: {
     throw new TourApiError(
       "keyword는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
@@ -686,13 +822,13 @@ export async function searchKeyword(params: {
 
   const response = await fetchApiResponse(endpoint, apiParams);
   const items = normalizeItems(
-    (response.response.body.items as unknown) as TourItem | TourItem[]
+    response.response.body?.items as unknown as TourItem | TourItem[],
   );
 
   // 페이지네이션 정보 추출
-  const totalCount = response.response.body.totalCount || 0;
-  const numOfRows = response.response.body.numOfRows || params.numOfRows || 12;
-  const pageNo = response.response.body.pageNo || params.pageNo || 1;
+  const totalCount = response.response.body?.totalCount || 0;
+  const numOfRows = response.response.body?.numOfRows || params.numOfRows || 12;
+  const pageNo = response.response.body?.pageNo || params.pageNo || 1;
   const totalPages = Math.ceil(totalCount / numOfRows);
 
   return {
@@ -742,13 +878,13 @@ export async function getDetailCommon(params: {
     throw new TourApiError(
       "contentId는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
-  // 한국관광공사 API는 contentId만 필수 파라미터
-  // PRD 4.1 참고: detailCommon2는 serviceKey, MobileOS, MobileApp, contentId만 필요
-  // 추가 파라미터는 API가 지원하지 않을 수 있으므로 contentId만 전달
+  // 한국관광공사 API 파라미터 설정
+  // PRD 4.1 참고: detailCommon2는 serviceKey, MobileOS, MobileApp, contentId가 필수
+  // API는 기본적으로 모든 정보를 반환하므로 파라미터 없이 contentId만 전달
   const apiParams: Record<string, string | number | undefined> = {
     contentId: params.contentId.trim(),
   };
@@ -758,59 +894,109 @@ export async function getDetailCommon(params: {
     apiParams.contentTypeId = params.contentTypeId;
   }
 
+  // 다른 선택 파라미터들도 명시적으로 전달
+  if (params.defaultYN) {
+    apiParams.defaultYN = params.defaultYN;
+  }
+  if (params.areacodeYN) {
+    apiParams.areacodeYN = params.areacodeYN;
+  }
+  if (params.catcodeYN) {
+    apiParams.catcodeYN = params.catcodeYN;
+  }
+  if (params.addrinfoYN) {
+    apiParams.addrinfoYN = params.addrinfoYN;
+  }
+  if (params.mapinfoYN) {
+    apiParams.mapinfoYN = params.mapinfoYN;
+  }
+  if (params.overviewYN) {
+    apiParams.overviewYN = params.overviewYN;
+  }
+
   const response = await fetchApiResponse(endpoint, apiParams);
-  
+
   // 디버깅: API 응답 구조 확인
   if (process.env.NODE_ENV === "development") {
     console.group("[getDetailCommon] API 응답 구조");
     console.log("contentId:", params.contentId);
     console.log("response.response.body:", response.response.body);
-    console.log("response.response.body.items:", response.response.body.items);
-    console.log("items type:", typeof response.response.body.items);
-    console.log("items isArray:", Array.isArray(response.response.body.items));
-    if (response.response.body.items) {
-      console.log("items keys:", Object.keys(response.response.body.items));
-      if (response.response.body.items.item) {
-        console.log("items.item:", response.response.body.items.item);
-        console.log("items.item[0]:", Array.isArray(response.response.body.items.item) ? response.response.body.items.item[0] : response.response.body.items.item);
+    console.log("response.response.body.items:", response.response.body?.items);
+    console.log("items type:", typeof response.response.body?.items);
+    console.log("items isArray:", Array.isArray(response.response.body?.items));
+    if (response.response.body?.items) {
+      const items = response.response.body.items as
+        | { item?: unknown }
+        | unknown[];
+      console.log("items keys:", Object.keys(items));
+      if (
+        typeof items === "object" &&
+        items !== null &&
+        "item" in items &&
+        items.item
+      ) {
+        console.log("items.item:", items.item);
+        console.log(
+          "items.item[0]:",
+          Array.isArray(items.item) ? items.item[0] : items.item,
+        );
       }
     }
     console.groupEnd();
   }
-  
+
   const items = normalizeItems(
-    (response.response.body.items as unknown) as TourDetail | TourDetail[]
+    response.response.body?.items as unknown as TourDetail | TourDetail[],
   );
 
   if (items.length === 0) {
     throw new TourApiError(
       `상세 정보를 찾을 수 없습니다. (contentId: ${params.contentId})`,
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
-  // 디버깅: 파싱된 첫 번째 항목 확인
-  if (process.env.NODE_ENV === "development") {
-    console.group("[getDetailCommon] 파싱된 첫 번째 항목");
-    console.log("전체 항목:", items[0]);
-    console.log("contentId:", items[0].contentid);
-    console.log("title:", items[0].title);
-    console.log("firstimage:", items[0].firstimage);
-    console.log("firstimage type:", typeof items[0].firstimage);
-    console.log("firstimage2:", items[0].firstimage2);
-    console.log("firstimage2 type:", typeof items[0].firstimage2);
-    console.log("firstimage 값 검증:", {
-      isNull: items[0].firstimage === null,
-      isUndefined: items[0].firstimage === undefined,
-      isEmpty: items[0].firstimage === "",
-      isStringNull: items[0].firstimage === "null",
-      toString: String(items[0].firstimage),
-    });
-    console.groupEnd();
+  // 빈 문자열을 null로 정규화 (이미지 URL 처리)
+  const firstItem = items[0];
+  if (firstItem.firstimage === "") {
+    firstItem.firstimage = null as any;
+  }
+  if (firstItem.firstimage2 === "") {
+    firstItem.firstimage2 = null as any;
   }
 
-  return items[0];
+  // 디버깅: 파싱된 첫 번째 항목 확인 (간소화)
+  if (process.env.NODE_ENV === "development") {
+    console.log("[getDetailCommon] 상세 정보 로드 완료:", {
+      contentId: firstItem.contentid,
+      title: firstItem.title,
+      hasFirstImage: !!firstItem.firstimage,
+      hasFirstImage2: !!firstItem.firstimage2,
+      firstimage: firstItem.firstimage || "없음",
+      firstimage2: firstItem.firstimage2 || "없음",
+      firstimageType: typeof firstItem.firstimage,
+      firstimage2Type: typeof firstItem.firstimage2,
+      isValidFirstImage: isValidImageUrl(firstItem.firstimage),
+      isValidFirstImage2: isValidImageUrl(firstItem.firstimage2),
+      mapx: firstItem.mapx || "없음",
+      mapy: firstItem.mapy || "없음",
+      mapxType: typeof firstItem.mapx,
+      mapyType: typeof firstItem.mapy,
+      mapxIsEmpty:
+        firstItem.mapx === "" ||
+        firstItem.mapx === null ||
+        firstItem.mapx === undefined,
+      mapyIsEmpty:
+        firstItem.mapy === "" ||
+        firstItem.mapy === null ||
+        firstItem.mapy === undefined,
+      hasMapx: !!firstItem.mapx && firstItem.mapx !== "",
+      hasMapy: !!firstItem.mapy && firstItem.mapy !== "",
+    });
+  }
+
+  return firstItem;
 }
 
 /**
@@ -840,7 +1026,7 @@ export async function getDetailIntro(params: {
     throw new TourApiError(
       "contentId는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
@@ -848,7 +1034,7 @@ export async function getDetailIntro(params: {
     throw new TourApiError(
       "contentTypeId는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
@@ -859,14 +1045,14 @@ export async function getDetailIntro(params: {
 
   const response = await fetchApiResponse(endpoint, apiParams);
   const items = normalizeItems(
-    (response.response.body.items as unknown) as TourIntro | TourIntro[]
+    response.response.body?.items as unknown as TourIntro | TourIntro[],
   );
 
   if (items.length === 0) {
     throw new TourApiError(
       `운영 정보를 찾을 수 없습니다. (contentId: ${params.contentId})`,
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
@@ -899,27 +1085,57 @@ export async function getDetailImage(params: {
     throw new TourApiError(
       "contentId는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
+  // 한국관광공사 API 파라미터 설정
+  // API는 기본적으로 모든 이미지 정보를 반환하므로 파라미터 없이 contentId만 전달
   const apiParams: Record<string, string | number | undefined> = {
     contentId: params.contentId.trim(),
   };
 
-  if (params.imageYN) {
-    apiParams.imageYN = params.imageYN;
-  }
-  if (params.subImageYN) {
-    apiParams.subImageYN = params.subImageYN;
-  }
-
   const response = await fetchApiResponse(endpoint, apiParams);
   const items = normalizeItems(
-    (response.response.body.items as unknown) as TourImage | TourImage[]
+    response.response.body?.items as unknown as TourImage | TourImage[],
   );
 
-  return items;
+  // 응답 검증: originimgurl 필드가 있는 항목만 필터링
+  const validItems = items.filter((item) => {
+    if (!item.originimgurl) {
+      return false;
+    }
+    const url = String(item.originimgurl).trim();
+    // 빈 문자열, "null", "undefined" 체크
+    if (
+      url === "" ||
+      url === "null" ||
+      url === "undefined" ||
+      url.toLowerCase() === "null"
+    ) {
+      return false;
+    }
+    // HTTP/HTTPS 프로토콜 체크
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      return false;
+    }
+    return true;
+  });
+
+  if (
+    process.env.NODE_ENV === "development" &&
+    items.length > 0 &&
+    validItems.length < items.length
+  ) {
+    console.log("[getDetailImage] 유효하지 않은 이미지 필터링:", {
+      contentId: params.contentId,
+      전체개수: items.length,
+      유효개수: validItems.length,
+      필터링됨: items.length - validItems.length,
+    });
+  }
+
+  return validItems;
 }
 
 /**
@@ -947,7 +1163,7 @@ export async function getDetailPetTour(params: {
     throw new TourApiError(
       "contentId는 필수 파라미터입니다.",
       undefined,
-      endpoint
+      endpoint,
     );
   }
 
@@ -958,7 +1174,7 @@ export async function getDetailPetTour(params: {
   try {
     const response = await fetchApiResponse(endpoint, apiParams);
     const items = normalizeItems(
-      (response.response.body.items as unknown) as PetTourInfo | PetTourInfo[]
+      response.response.body?.items as unknown as PetTourInfo | PetTourInfo[],
     );
 
     if (items.length === 0) {
@@ -968,10 +1184,12 @@ export async function getDetailPetTour(params: {
     return items[0];
   } catch (error) {
     // 반려동물 정보는 선택 사항이므로, 데이터가 없어도 에러를 throw하지 않음
-    if (error instanceof TourApiError && error.message.includes("찾을 수 없습니다")) {
+    if (
+      error instanceof TourApiError &&
+      error.message.includes("찾을 수 없습니다")
+    ) {
       return null;
     }
     throw error;
   }
 }
-

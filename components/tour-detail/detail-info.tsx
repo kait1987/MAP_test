@@ -31,6 +31,7 @@ import { getContentTypeName } from "@/lib/types/stats";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { isValidImageUrl } from "@/lib/utils/image";
 
 export interface DetailInfoProps {
   detail: TourDetail;
@@ -42,87 +43,32 @@ export interface DetailInfoProps {
  * firstimage 우선, 없으면 firstimage2, 둘 다 없으면 null 반환 (로컬 fallback UI 사용)
  */
 function getImageUrl(detail: TourDetail): string | null {
-  // 디버깅: 이미지 URL 확인
+  // 디버깅: 이미지 URL 확인 (간소화)
   if (process.env.NODE_ENV === "development") {
-    console.group("[DetailInfo] getImageUrl 호출");
-    console.log("detail 객체:", detail);
-    console.log("contentId:", detail.contentid);
-    console.log("title:", detail.title);
-    console.log("firstimage 원본:", detail.firstimage);
-    console.log("firstimage type:", typeof detail.firstimage);
-    console.log("firstimage2 원본:", detail.firstimage2);
-    console.log("firstimage2 type:", typeof detail.firstimage2);
-    console.groupEnd();
+    console.log("[DetailInfo] 이미지 확인:", {
+      contentId: detail.contentid,
+      title: detail.title,
+      hasFirstImage: isValidImageUrl(detail.firstimage),
+      hasFirstImage2: isValidImageUrl(detail.firstimage2),
+    });
   }
   
-  // firstimage 확인
-  if (detail.firstimage != null && detail.firstimage !== undefined) {
+  // firstimage 확인 (유틸리티 함수 사용)
+  if (isValidImageUrl(detail.firstimage)) {
     const url = String(detail.firstimage).trim();
     if (process.env.NODE_ENV === "development") {
-      console.log("[DetailInfo] firstimage 처리:", {
-        원본값: detail.firstimage,
-        문자열변환: url,
-        빈값체크: url === "",
-        null체크: url === "null",
-        undefined체크: url === "undefined",
-        http체크: url.startsWith("http://") || url.startsWith("https://"),
-      });
+      console.log("[DetailInfo] ✅ firstimage URL 발견:", url);
     }
-    
-    if (url !== "" && url !== "null" && url !== "undefined" && url.toLowerCase() !== "null") {
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[DetailInfo] ✅ firstimage URL 발견:", url);
-        }
-        return url;
-      }
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[DetailInfo] ❌ 유효하지 않은 firstimage URL 형식:", url);
-      }
-    } else {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[DetailInfo] ❌ firstimage가 빈 값 또는 null:", url);
-      }
-    }
-  } else {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[DetailInfo] ❌ firstimage가 null 또는 undefined");
-    }
+    return url;
   }
   
-  // firstimage2 확인
-  if (detail.firstimage2 != null && detail.firstimage2 !== undefined) {
+  // firstimage2 확인 (유틸리티 함수 사용)
+  if (isValidImageUrl(detail.firstimage2)) {
     const url = String(detail.firstimage2).trim();
     if (process.env.NODE_ENV === "development") {
-      console.log("[DetailInfo] firstimage2 처리:", {
-        원본값: detail.firstimage2,
-        문자열변환: url,
-        빈값체크: url === "",
-        null체크: url === "null",
-        undefined체크: url === "undefined",
-        http체크: url.startsWith("http://") || url.startsWith("https://"),
-      });
+      console.log("[DetailInfo] ✅ firstimage2 URL 발견:", url);
     }
-    
-    if (url !== "" && url !== "null" && url !== "undefined" && url.toLowerCase() !== "null") {
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[DetailInfo] ✅ firstimage2 URL 발견:", url);
-        }
-        return url;
-      }
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[DetailInfo] ❌ 유효하지 않은 firstimage2 URL 형식:", url);
-      }
-    } else {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[DetailInfo] ❌ firstimage2가 빈 값 또는 null:", url);
-      }
-    }
-  } else {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[DetailInfo] ❌ firstimage2가 null 또는 undefined");
-    }
+    return url;
   }
   
   if (process.env.NODE_ENV === "development") {

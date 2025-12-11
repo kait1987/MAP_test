@@ -108,28 +108,104 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
 
   // 좌표 변환 (useMemo로 처리하여 Hook 규칙 준수)
   const coords = useMemo(() => {
-    if (!detail.mapx || !detail.mapy) {
+    // 디버깅: 좌표 정보 확인
+    if (process.env.NODE_ENV === "development") {
+      console.log("[DetailMap] 좌표 정보 확인:", {
+        contentId: detail.contentid,
+        title: detail.title,
+        mapx: detail.mapx || "없음",
+        mapy: detail.mapy || "없음",
+        mapxType: typeof detail.mapx,
+        mapyType: typeof detail.mapy,
+        mapxIsEmpty: detail.mapx === "" || detail.mapx === null || detail.mapx === undefined,
+        mapyIsEmpty: detail.mapy === "" || detail.mapy === null || detail.mapy === undefined,
+      });
+    }
+
+    // 빈 문자열, null, undefined 체크
+    if (!detail.mapx || detail.mapx === "" || !detail.mapy || detail.mapy === "") {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailMap] ⚠️ 좌표 정보 없음:", {
+          contentId: detail.contentid,
+          title: detail.title,
+          mapx: detail.mapx || "없음",
+          mapy: detail.mapy || "없음",
+        });
+      }
       return null;
     }
+
     try {
-      return convertKATECToWGS84(detail.mapx, detail.mapy);
+      const result = convertKATECToWGS84(detail.mapx, detail.mapy);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[DetailMap] ✅ 좌표 변환 성공:", {
+          contentId: detail.contentid,
+          title: detail.title,
+          원본좌표: { mapx: detail.mapx, mapy: detail.mapy },
+          변환된좌표: result,
+        });
+      }
+      return result;
     } catch (err) {
-      console.error("좌표 변환 실패:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[DetailMap] ❌ 좌표 변환 실패:", {
+          contentId: detail.contentid,
+          title: detail.title,
+          mapx: detail.mapx,
+          mapy: detail.mapy,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
       return null;
     }
-  }, [detail.mapx, detail.mapy]);
+  }, [detail.mapx, detail.mapy, detail.contentid, detail.title]);
 
   // 지도 초기화
   useEffect(() => {
-    if (!mapRef.current || !coords) return;
+    if (!mapRef.current) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailMap] ⚠️ mapRef.current가 없음");
+      }
+      return;
+    }
+
+    if (!coords) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[DetailMap] ⚠️ 좌표가 없어 지도를 초기화할 수 없음");
+      }
+      return;
+    }
 
     let isMounted = true;
 
+    if (process.env.NODE_ENV === "development") {
+      console.log("[DetailMap] 지도 초기화 시작:", {
+        contentId: detail.contentid,
+        title: detail.title,
+        coords,
+      });
+    }
+
     loadNaverMapsScript()
       .then(() => {
-        if (!isMounted || !mapRef.current) return;
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DetailMap] ✅ Naver Maps API 로드 완료");
+        }
+
+        if (!isMounted || !mapRef.current) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[DetailMap] ⚠️ 컴포넌트가 언마운트되었거나 mapRef가 없음");
+          }
+          return;
+        }
 
         try {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[DetailMap] 지도 생성 시작:", {
+              center: { lat: coords.lat, lng: coords.lng },
+            });
+          }
+
           // 지도 생성
           const map = new window.naver.maps.Map(mapRef.current, {
             center: new window.naver.maps.LatLng(coords.lat, coords.lng),
@@ -139,6 +215,10 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
               position: window.naver.maps.Position.TOP_RIGHT,
             },
           });
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("[DetailMap] ✅ 지도 생성 완료");
+          }
 
           mapInstanceRef.current = map;
 
@@ -210,9 +290,20 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
             }
           });
 
+          if (process.env.NODE_ENV === "development") {
+            console.log("[DetailMap] ✅ 지도 초기화 완료");
+          }
+
           setIsLoading(false);
         } catch (err) {
-          console.error("지도 초기화 실패:", err);
+          if (process.env.NODE_ENV === "development") {
+            console.error("[DetailMap] ❌ 지도 초기화 실패:", {
+              contentId: detail.contentid,
+              title: detail.title,
+              error: err instanceof Error ? err.message : String(err),
+              stack: err instanceof Error ? err.stack : undefined,
+            });
+          }
           if (isMounted) {
             setError(
               err instanceof globalThis.Error
@@ -224,7 +315,14 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
         }
       })
       .catch((err) => {
-        console.error("Naver Maps API 로드 실패:", err);
+        if (process.env.NODE_ENV === "development") {
+          console.error("[DetailMap] ❌ Naver Maps API 로드 실패:", {
+            contentId: detail.contentid,
+            title: detail.title,
+            error: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+        }
         if (isMounted) {
           setError(
             err instanceof globalThis.Error
@@ -237,21 +335,63 @@ export default function DetailMap({ detail, className }: DetailMapProps) {
 
     return () => {
       isMounted = false;
-      // Cleanup
+      
+      // Cleanup: 마커 제거
       if (markerRef.current) {
-        markerRef.current.setMap(null);
+        try {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[DetailMap] 마커 cleanup 중 오류:", err);
+          }
+        }
       }
+      
+      // Cleanup: 인포윈도우 닫기
       if (infoWindowRef.current) {
-        infoWindowRef.current.close();
+        try {
+          infoWindowRef.current.close();
+          infoWindowRef.current = null;
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[DetailMap] 인포윈도우 cleanup 중 오류:", err);
+          }
+        }
+      }
+      
+      // Cleanup: 지도 인스턴스 정리
+      if (mapInstanceRef.current) {
+        try {
+          // 지도 이벤트 리스너 제거는 Naver Maps API가 자동으로 처리
+          mapInstanceRef.current = null;
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[DetailMap] 지도 인스턴스 cleanup 중 오류:", err);
+          }
+        }
+      }
+      
+      if (process.env.NODE_ENV === "development") {
+        console.log("[DetailMap] cleanup 완료");
       }
     };
-  }, [detail.mapx, detail.mapy, detail.title, detail.addr1, coords]);
+  }, [detail.mapx, detail.mapy, detail.title, detail.addr1, coords, detail.contentid]);
 
   // HTML 이스케이프 함수 (XSS 방지)
+  // React2Shell 보안 취약점 방지를 위한 완전한 HTML 이스케이프
   function escapeHtml(text: string): string {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+    if (typeof text !== "string") {
+      return String(text);
+    }
+    // textContent를 사용하는 방법은 안전하지만, 명시적으로 모든 특수 문자를 이스케이프
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/\//g, "&#x2F;");
   }
 
   // 좌표 복사 핸들러

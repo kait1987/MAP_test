@@ -1,0 +1,3 @@
+# React2Shell Security Bulletin (Complete Summary)
+
+... (content trimmed for demo) ...

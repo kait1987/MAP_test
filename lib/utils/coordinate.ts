@@ -78,27 +78,56 @@ export function convertKATECToWGS84(
     throw new Error(`Invalid coordinates (zero): mapx=${mapx}, mapy=${mapy}`);
   }
   
-  // 좌표 형식 자동 판단:
-  // - 값이 100 이상이면 이미 WGS84 소수점 좌표 (그대로 사용)
-  // - 값이 100 미만이면 KATEC 정수형 좌표 (10000000으로 나누기)
+  // 좌표 형식 자동 판단 (단순화):
+  // 한국관광공사 API는 대부분 WGS84 소수점 좌표를 반환하지만, 일부는 KATEC 정수형을 반환할 수 있음
+  // 판단 기준:
+  // 1. 소수점이 있으면 WGS84 소수점 좌표 (그대로 사용)
+  // 2. 정수형이고 값이 100 이상 1000 미만이면 WGS84 소수점 좌표 (그대로 사용)
+  // 3. 정수형이고 값이 1000 이상이면 KATEC 정수형 좌표 (10000000으로 나누기)
   let lng: number;
   let lat: number;
   
-  if (Math.abs(mapxNum) >= 100) {
-    // 이미 WGS84 소수점 좌표 (그대로 사용)
+  const mapxHasDecimal = mapxStr.includes(".") || mapxStr.includes(",");
+  const mapyHasDecimal = mapyStr.includes(".") || mapyStr.includes(",");
+  
+  // 소수점이 있으면 이미 WGS84 소수점 좌표
+  if (mapxHasDecimal || mapyHasDecimal) {
     lng = mapxNum;
     lat = mapyNum;
     
     if (process.env.NODE_ENV === "development" && (globalThis as any).__coordConvertCount <= 3) {
-      console.log(`[convertKATECToWGS84] WGS84 좌표로 인식 (변환 없음)`);
+      console.log(`[convertKATECToWGS84] WGS84 소수점 좌표로 인식 (소수점 있음)`, {
+        mapxStr,
+        mapyStr,
+        mapxNum,
+        mapyNum,
+      });
     }
   } else {
-    // KATEC 정수형 좌표 (10000000으로 나누기)
-    lng = mapxNum / 10000000;
-    lat = mapyNum / 10000000;
-    
-    if (process.env.NODE_ENV === "development" && (globalThis as any).__coordConvertCount <= 3) {
-      console.log(`[convertKATECToWGS84] KATEC 좌표로 인식 (변환 적용)`);
+    // 정수형 좌표: 값이 1000 이상이면 KATEC 정수형 좌표로 간주
+    if (Math.abs(mapxNum) >= 1000 || Math.abs(mapyNum) >= 1000) {
+      // KATEC 정수형 좌표 (10000000으로 나누기)
+      lng = mapxNum / 10000000;
+      lat = mapyNum / 10000000;
+      
+      if (process.env.NODE_ENV === "development" && (globalThis as any).__coordConvertCount <= 3) {
+        console.log(`[convertKATECToWGS84] KATEC 정수형 좌표로 인식 (1000 이상)`, {
+          mapxNum,
+          mapyNum,
+          변환후: { lng, lat },
+        });
+      }
+    } else {
+      // 값이 1000 미만이면 이미 WGS84 소수점 좌표 (그대로 사용)
+      lng = mapxNum;
+      lat = mapyNum;
+      
+      if (process.env.NODE_ENV === "development" && (globalThis as any).__coordConvertCount <= 3) {
+        console.log(`[convertKATECToWGS84] WGS84 소수점 좌표로 인식 (1000 미만)`, {
+          mapxNum,
+          mapyNum,
+        });
+      }
     }
   }
   
@@ -119,17 +148,39 @@ export function convertKATECToWGS84(
   }
   
   // 좌표 범위 검사 (한국 영역: 위도 33-43, 경도 124-132)
+  // 참고: 일부 관광지는 한국 영역 밖에 있을 수 있으므로, 에러를 throw하지 않고 경고만 출력
   if (lat < 33 || lat > 43 || lng < 124 || lng > 132) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[convertKATECToWGS84] 좌표가 한국 영역을 벗어남:", {
+      console.warn("[convertKATECToWGS84] ⚠️ 좌표가 한국 영역을 벗어남 (그래도 반환):", {
         lat,
         lng,
         mapx,
         mapy,
+        mapxStr,
+        mapyStr,
+        한국영역범위: "위도 33-43, 경도 124-132",
+        변환전: { mapxNum, mapyNum },
+        변환후: { lat, lng },
       });
     }
+    // 한국 영역을 벗어난 좌표도 반환 (에러를 throw하지 않음)
+    // 호출부에서 한국 영역 검사를 수행하여 마커를 표시하지 않도록 처리
   }
 
   return { lat, lng };
+}
+
+/**
+ * 좌표가 한국 영역 내에 있는지 검증
+ * 
+ * @param lat - 위도
+ * @param lng - 경도
+ * @returns 한국 영역 내에 있으면 true, 그렇지 않으면 false
+ */
+export function isValidKoreanCoordinate(
+  lat: number,
+  lng: number
+): boolean {
+  return lat >= 33 && lat <= 43 && lng >= 124 && lng <= 132;
 }
 

@@ -231,10 +231,22 @@ export default function NaverMap({
           }
         } catch (err) {
           if (process.env.NODE_ENV === "development") {
-            console.error(`[NaverMap] 좌표 변환 실패: ${tour.title}`, {
+            const errorMessage = err instanceof globalThis.Error ? err.message : String(err);
+            const errorStack = err instanceof globalThis.Error ? err.stack : undefined;
+            console.error(`[NaverMap] ❌ 좌표 변환 실패: ${tour.title}`, {
               contentId: tour.contentid,
+              title: tour.title,
               mapx: tour.mapx,
               mapy: tour.mapy,
+              mapxType: typeof tour.mapx,
+              mapyType: typeof tour.mapy,
+              mapxStr: String(tour.mapx),
+              mapyStr: String(tour.mapy),
+              mapxNum: parseFloat(String(tour.mapx)),
+              mapyNum: parseFloat(String(tour.mapy)),
+              errorMessage: errorMessage || "에러 메시지 없음",
+              errorStack: errorStack || "스택 없음",
+              errorType: err?.constructor?.name || typeof err,
               error: err,
             });
           }
@@ -280,8 +292,21 @@ export default function NaverMap({
         });
 
         // 인포윈도우 생성 (HTML 문자열 사용)
-        const escapedTitle = tour.title.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-        const escapedAddr = `${tour.addr1}${tour.addr2 ? ` ${tour.addr2}` : ""}`.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        // React2Shell 보안 취약점 방지를 위한 완전한 HTML 이스케이프
+        const escapeHtml = (text: string): string => {
+          if (typeof text !== "string") return String(text);
+          return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;")
+            .replace(/\//g, "&#x2F;");
+        };
+        
+        const escapedTitle = escapeHtml(tour.title);
+        const escapedAddr = escapeHtml(`${tour.addr1}${tour.addr2 ? ` ${tour.addr2}` : ""}`);
+        const escapedContentId = escapeHtml(tour.contentid);
         
         const infoWindow = new window.naver.maps.InfoWindow({
           content: `
@@ -307,7 +332,7 @@ export default function NaverMap({
                 color: #6b7280;
               ">${escapedAddr}</p>
               <a
-                href="/places/${tour.contentid}"
+                href="/places/${escapedContentId}"
                 style="
                   display: inline-block;
                   padding: 6px 12px;
@@ -569,8 +594,17 @@ export default function NaverMap({
               hasValidBounds = true;
             }
           }
-        } catch {
-          // ignore
+        } catch (err) {
+          // 좌표 변환 실패는 조용히 무시 (bounds 계산 제외)
+          if (process.env.NODE_ENV === "development") {
+            const errorMessage = err instanceof globalThis.Error ? err.message : String(err);
+            console.warn(`[NaverMap] 좌표 변환 실패 (bounds 계산 제외): ${tour.title}`, {
+              contentId: tour.contentid,
+              mapx: tour.mapx,
+              mapy: tour.mapy,
+              errorMessage,
+            });
+          }
         }
       });
       
@@ -592,7 +626,45 @@ export default function NaverMap({
     const selectedTour = tours.find((tour) => tour.contentid === selectedTourId);
     if (!selectedTour) return;
 
-    const coords = convertKATECToWGS84(selectedTour.mapx, selectedTour.mapy);
+    // 좌표 변환 (에러 처리 추가)
+    let coords;
+    try {
+      if (!selectedTour.mapx || !selectedTour.mapy) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(`[NaverMap] 선택된 관광지 좌표 없음: ${selectedTour.title}`, {
+            contentId: selectedTour.contentid,
+            mapx: selectedTour.mapx,
+            mapy: selectedTour.mapy,
+          });
+        }
+        return;
+      }
+
+      coords = convertKATECToWGS84(selectedTour.mapx, selectedTour.mapy);
+      
+      // 한국 영역 검사
+      if (coords.lat < 33 || coords.lat > 43 || coords.lng < 124 || coords.lng > 132) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(`[NaverMap] 선택된 관광지 좌표가 한국 영역을 벗어남: ${selectedTour.title}`, {
+            contentId: selectedTour.contentid,
+            coords,
+          });
+        }
+        return;
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        const errorMessage = err instanceof globalThis.Error ? err.message : String(err);
+        console.error(`[NaverMap] ❌ 선택된 관광지 좌표 변환 실패: ${selectedTour.title}`, {
+          contentId: selectedTour.contentid,
+          mapx: selectedTour.mapx,
+          mapy: selectedTour.mapy,
+          errorMessage,
+        });
+      }
+      return;
+    }
+
     const position = new window.naver.maps.LatLng(coords.lat, coords.lng);
 
     // 지도 중심 이동
