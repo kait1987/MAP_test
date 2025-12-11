@@ -495,18 +495,34 @@ export async function getAreaBasedList(params: {
   
   // 디버깅: API 응답 구조 확인
   if (process.env.NODE_ENV === "development") {
-    console.log("[getAreaBasedList] API 응답 구조:", {
-      hasResponse: !!response,
-      hasResponseBody: !!response?.response?.body,
-      bodyKeys: response?.response?.body ? Object.keys(response.response.body) : [],
-      itemsType: typeof response?.response?.body?.items,
-      itemsIsArray: Array.isArray(response?.response?.body?.items),
-      // items.item 구조 확인 (한국관광공사 API는 때때로 items.item 형태로 응답)
-      hasItemsItem: !!(response?.response?.body?.items as any)?.item,
-      itemsItemType: typeof (response?.response?.body?.items as any)?.item,
-      itemsItemIsArray: Array.isArray((response?.response?.body?.items as any)?.item),
-      rawItems: response?.response?.body?.items,
-    });
+    console.group("[getAreaBasedList] API 응답 구조");
+    console.log("hasResponse:", !!response);
+    console.log("hasResponseBody:", !!response?.response?.body);
+    console.log("bodyKeys:", response?.response?.body ? Object.keys(response.response.body) : []);
+    console.log("itemsType:", typeof response?.response?.body?.items);
+    console.log("itemsIsArray:", Array.isArray(response?.response?.body?.items));
+    console.log("hasItemsItem:", !!(response?.response?.body?.items as any)?.item);
+    
+    // 첫 번째 항목의 좌표 정보 확인
+    const firstItem = Array.isArray((response?.response?.body?.items as any)?.item) 
+      ? (response?.response?.body?.items as any).item[0]
+      : Array.isArray(response?.response?.body?.items)
+      ? response.response.body.items[0]
+      : (response?.response?.body?.items as any)?.item || response?.response?.body?.items;
+    
+    if (firstItem) {
+      console.log("첫 번째 항목 좌표 정보:", {
+        title: firstItem.title,
+        contentid: firstItem.contentid,
+        mapx: firstItem.mapx,
+        mapy: firstItem.mapy,
+        mapxType: typeof firstItem.mapx,
+        mapyType: typeof firstItem.mapy,
+        mapxValue: firstItem.mapx,
+        mapyValue: firstItem.mapy,
+      });
+    }
+    console.groupEnd();
   }
 
   // 한국관광공사 API는 items.item 또는 items 형태로 응답할 수 있음
@@ -535,12 +551,59 @@ export async function getAreaBasedList(params: {
 
   // 디버깅: 파싱된 items 확인
   if (process.env.NODE_ENV === "development" && items.length > 0) {
-    console.log("[getAreaBasedList] 파싱된 첫 번째 항목:", {
+    console.group("[getAreaBasedList] 파싱된 항목 확인");
+    console.log("전체 항목 개수:", items.length);
+    console.log("첫 번째 항목:", {
       contentid: items[0].contentid,
       title: items[0].title,
+      mapx: items[0].mapx,
+      mapy: items[0].mapy,
+      mapxType: typeof items[0].mapx,
+      mapyType: typeof items[0].mapy,
       firstimage: items[0].firstimage,
-      fullItem: items[0],
     });
+    
+    // 좌표가 있는 항목과 없는 항목 확인
+    const itemsWithCoords = items.filter((item) => item.mapx && item.mapy);
+    const itemsWithoutCoords = items.filter((item) => !item.mapx || !item.mapy);
+    
+    // 좌표 값 샘플 확인 (변환 로직과 동일하게)
+    const coordSamples = itemsWithCoords.slice(0, 3).map((item) => {
+      const mapxNum = parseFloat(String(item.mapx));
+      const mapyNum = parseFloat(String(item.mapy));
+      
+      // 좌표 형식 자동 판단 (convertKATECToWGS84와 동일한 로직)
+      let lng: number;
+      let lat: number;
+      if (Math.abs(mapxNum) >= 100) {
+        // 이미 WGS84 소수점 좌표
+        lng = mapxNum;
+        lat = mapyNum;
+      } else {
+        // KATEC 정수형 좌표
+        lng = mapxNum / 10000000;
+        lat = mapyNum / 10000000;
+      }
+      
+      return {
+        title: item.title,
+        contentid: item.contentid,
+        mapx: item.mapx,
+        mapy: item.mapy,
+        mapxNum,
+        mapyNum,
+        변환된좌표: { lat, lng },
+        한국영역내: lat >= 33 && lat <= 43 && lng >= 124 && lng <= 132,
+        좌표형식: Math.abs(mapxNum) >= 100 ? "WGS84 (소수점)" : "KATEC (정수형)",
+      };
+    });
+    
+    console.log("좌표 정보:", {
+      좌표있음: itemsWithCoords.length,
+      좌표없음: itemsWithoutCoords.length,
+      좌표샘플: coordSamples,
+    });
+    console.groupEnd();
   }
 
   return {

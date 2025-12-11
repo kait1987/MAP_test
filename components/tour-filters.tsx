@@ -106,6 +106,7 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Select
+              id="area-filter-select"
               value={currentAreaCode || "all"}
               onValueChange={(value) =>
                 handleFilterChange("areaCode", value === "all" ? undefined : value)
@@ -129,6 +130,7 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Select
+              id="content-type-filter-select"
               value={currentContentTypeId || "all"}
               onValueChange={(value) =>
                 handleFilterChange("contentTypeId", value === "all" ? undefined : value)
@@ -152,6 +154,7 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
           <div className="flex items-center gap-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Select
+              id="arrange-filter-select"
               value={currentArrange}
               onValueChange={(value) => handleFilterChange("arrange", value)}
             >
@@ -210,6 +213,7 @@ export default function TourFilters({ areas, className }: TourFiltersProps) {
             </TooltipProvider>
             {currentPetAllowed && (
               <Select
+                id="pet-size-filter-select"
                 value={currentPetSize || "all"}
                 onValueChange={(value) =>
                   handleFilterChange("petSize", value === "all" ? undefined : value)

@@ -99,6 +99,23 @@ async function TourListData({
     } else {
       console.log("[TourListData] 반려동물 필터 비활성화, 전체 목록 반환:", toursWithPetInfo.length, "개 항목");
     }
+    
+    // 디버깅: 좌표 정보 확인
+    if (process.env.NODE_ENV === "development") {
+      const toursWithCoords = toursWithPetInfo.filter((tour) => tour.mapx && tour.mapy);
+      const toursWithoutCoords = toursWithPetInfo.filter((tour) => !tour.mapx || !tour.mapy);
+      console.log("[TourListData] 좌표 정보:", {
+        전체개수: toursWithPetInfo.length,
+        좌표있음: toursWithCoords.length,
+        좌표없음: toursWithoutCoords.length,
+        좌표없는항목: toursWithoutCoords.slice(0, 3).map((tour) => ({
+          title: tour.title,
+          contentId: tour.contentid,
+          mapx: tour.mapx,
+          mapy: tour.mapy,
+        })),
+      });
+    }
 
     // 디버깅: API 응답 확인 (이미지 URL 포함)
     if (toursWithPetInfo.length > 0) {

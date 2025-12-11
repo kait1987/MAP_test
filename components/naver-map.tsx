@@ -188,11 +188,77 @@ export default function NaverMap({
     markersRef.current = [];
     infoWindowsRef.current = [];
 
+    if (process.env.NODE_ENV === "development") {
+      console.group("[NaverMap] 마커 업데이트");
+      console.log("관광지 개수:", tourList.length);
+    }
+
     // 새 마커 생성
+    let successCount = 0;
+    let failCount = 0;
+    const coordMap = new Map<string, number>(); // 좌표별 개수 추적
+    
     tourList.forEach((tour) => {
       try {
-        if (!tour.mapx || !tour.mapy) return;
-        const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+        if (!tour.mapx || !tour.mapy) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn(`[NaverMap] 좌표 없음: ${tour.title} (contentId: ${tour.contentid})`, {
+              mapx: tour.mapx,
+              mapy: tour.mapy,
+            });
+          }
+          failCount++;
+          return;
+        }
+        
+        // 좌표 변환
+        let coords;
+        try {
+          coords = convertKATECToWGS84(tour.mapx, tour.mapy);
+          
+          // 한국 영역 검사
+          if (coords.lat < 33 || coords.lat > 43 || coords.lng < 124 || coords.lng > 132) {
+            if (process.env.NODE_ENV === "development") {
+              console.warn(`[NaverMap] 좌표가 한국 영역을 벗어남: ${tour.title}`, {
+                contentId: tour.contentid,
+                mapx: tour.mapx,
+                mapy: tour.mapy,
+                coords,
+              });
+            }
+            failCount++;
+            return;
+          }
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(`[NaverMap] 좌표 변환 실패: ${tour.title}`, {
+              contentId: tour.contentid,
+              mapx: tour.mapx,
+              mapy: tour.mapy,
+              error: err,
+            });
+          }
+          failCount++;
+          return;
+        }
+        
+        // 좌표 중복 확인
+        const coordKey = `${coords.lat.toFixed(6)},${coords.lng.toFixed(6)}`;
+        const coordCount = (coordMap.get(coordKey) || 0) + 1;
+        coordMap.set(coordKey, coordCount);
+        
+        // 처음 5개만 상세 로그
+        if (process.env.NODE_ENV === "development" && successCount < 5) {
+          console.log(`[NaverMap] 마커 생성 (${successCount + 1}번째): ${tour.title}`, {
+            contentId: tour.contentid,
+            mapx: tour.mapx,
+            mapy: tour.mapy,
+            coords,
+            position: coordKey,
+            같은좌표개수: coordCount,
+          });
+        }
+        
         const position = new window.naver.maps.LatLng(coords.lat, coords.lng);
 
         // 마커 생성
@@ -274,10 +340,34 @@ export default function NaverMap({
 
         markersRef.current.push(marker);
         infoWindowsRef.current.push(infoWindow);
+        successCount++;
       } catch (err) {
-        console.error(`마커 생성 실패 (${tour.contentid}):`, err);
+        failCount++;
+        if (process.env.NODE_ENV === "development") {
+          console.error(`[NaverMap] 마커 생성 실패 (${tour.contentid}):`, err, {
+            title: tour.title,
+            mapx: tour.mapx,
+            mapy: tour.mapy,
+          });
+        }
       }
     });
+    
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[NaverMap] 마커 생성 완료: 성공 ${successCount}개, 실패 ${failCount}개`);
+      console.log(`[NaverMap] 고유 좌표 개수: ${coordMap.size}개`);
+      
+      // 중복 좌표 확인
+      const duplicateCoords = Array.from(coordMap.entries())
+        .filter(([_, count]) => count > 1)
+        .map(([coord, count]) => ({ coord, count }));
+      
+      if (duplicateCoords.length > 0) {
+        console.warn(`[NaverMap] 중복 좌표 발견:`, duplicateCoords);
+      }
+      
+      console.groupEnd();
+    }
   }, [onTourSelect]);
 
   useEffect(() => {
@@ -291,28 +381,56 @@ export default function NaverMap({
 
         try {
           // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
-          // 초기 중심 좌표 설정 (서울 또는 첫 번째 관광지)
           let centerLat = 37.5665; // 서울 기본값
           let centerLng = 126.9780;
+          let hasValidCenter = false;
 
           // 유효한 좌표를 가진 첫 번째 관광지를 찾아 중심점으로 설정
           for (const tour of tours) {
             try {
               if (tour.mapx && tour.mapy) {
                 const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-                centerLat = coords.lat;
-                centerLng = coords.lng;
-                break;
+                // 한국 영역 검사
+                if (coords.lat >= 33 && coords.lat <= 43 && coords.lng >= 124 && coords.lng <= 132) {
+                  centerLat = coords.lat;
+                  centerLng = coords.lng;
+                  hasValidCenter = true;
+                  if (process.env.NODE_ENV === "development") {
+                    console.log("[NaverMap] 초기 중심 좌표 설정:", {
+                      title: tour.title,
+                      coords,
+                      mapx: tour.mapx,
+                      mapy: tour.mapy,
+                    });
+                  }
+                  break;
+                }
               }
-            } catch {
+            } catch (err) {
+              if (process.env.NODE_ENV === "development") {
+                console.warn("[NaverMap] 초기 중심 좌표 설정 실패:", tour.title, err);
+              }
               continue;
             }
           }
+          
+          if (!hasValidCenter && process.env.NODE_ENV === "development") {
+            console.warn("[NaverMap] 유효한 중심 좌표를 찾지 못해 서울 기본값 사용");
+          }
 
           // 지도 생성
+          if (process.env.NODE_ENV === "development") {
+            console.log("[NaverMap] 지도 생성:", {
+              centerLat,
+              centerLng,
+              hasValidCenter,
+              toursCount: tours.length,
+            });
+          }
+          
           const map = new window.naver.maps.Map(mapRef.current, {
             center: new window.naver.maps.LatLng(centerLat, centerLng),
-            zoom: 13,
+            zoom: hasValidCenter ? 13 : 11, // 유효한 중심이 없으면 더 넓은 범위
             zoomControl: true,
             zoomControlOptions: {
               position: window.naver.maps.Position.TOP_RIGHT,
@@ -328,19 +446,70 @@ export default function NaverMap({
           if (tours.length > 0) {
             const bounds = new window.naver.maps.LatLngBounds();
             let hasValidBounds = false;
+            const validCoords: Array<{ lat: number; lng: number; title: string }> = [];
+            
             tours.forEach((tour) => {
               try {
                 if (tour.mapx && tour.mapy) {
                   const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-                  bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
-                  hasValidBounds = true;
+                  // 좌표 범위 검사 (한국 영역: 위도 33-43, 경도 124-132)
+                  if (coords.lat >= 33 && coords.lat <= 43 && coords.lng >= 124 && coords.lng <= 132) {
+                    const position = new window.naver.maps.LatLng(coords.lat, coords.lng);
+                    bounds.extend(position);
+                    validCoords.push({ ...coords, title: tour.title });
+                    hasValidBounds = true;
+                  } else {
+                    if (process.env.NODE_ENV === "development") {
+                      console.warn(`[NaverMap] 좌표가 한국 영역을 벗어남: ${tour.title}`, {
+                        contentId: tour.contentid,
+                        coords,
+                        mapx: tour.mapx,
+                        mapy: tour.mapy,
+                      });
+                    }
+                  }
                 }
-              } catch {
-                // ignore
+              } catch (err) {
+                if (process.env.NODE_ENV === "development") {
+                  console.warn(`[NaverMap] 좌표 변환 실패 (bounds): ${tour.title}`, err);
+                }
               }
             });
-            if (hasValidBounds) {
+            
+            if (process.env.NODE_ENV === "development") {
+              console.log("[NaverMap] 지도 범위 조정:", {
+                validCoordsCount: validCoords.length,
+                hasValidBounds,
+                coords: validCoords.slice(0, 5), // 처음 5개만 표시
+              });
+            }
+            
+            if (hasValidBounds && validCoords.length > 1) {
+              // 여러 마커가 있으면 범위로 조정
               map.fitBounds(bounds);
+              if (process.env.NODE_ENV === "development") {
+                console.log("[NaverMap] 지도 범위로 조정 완료");
+              }
+            } else if (validCoords.length === 1) {
+              // 마커가 하나면 해당 위치로 이동
+              const firstCoord = validCoords[0];
+              map.setCenter(new window.naver.maps.LatLng(firstCoord.lat, firstCoord.lng));
+              map.setZoom(15);
+              if (process.env.NODE_ENV === "development") {
+                console.log("[NaverMap] 단일 마커 위치로 이동:", firstCoord);
+              }
+            } else if (validCoords.length > 0) {
+              // 유효한 좌표가 있지만 범위가 없으면 첫 번째 좌표로 이동
+              const firstCoord = validCoords[0];
+              map.setCenter(new window.naver.maps.LatLng(firstCoord.lat, firstCoord.lng));
+              map.setZoom(13);
+              if (process.env.NODE_ENV === "development") {
+                console.log("[NaverMap] 첫 번째 좌표로 이동:", firstCoord);
+              }
+            } else {
+              if (process.env.NODE_ENV === "development") {
+                console.warn("[NaverMap] 유효한 좌표가 없어 지도 범위 조정 불가");
+              }
             }
           }
 
@@ -387,19 +556,31 @@ export default function NaverMap({
     if (tours.length > 0) {
       const bounds = new window.naver.maps.LatLngBounds();
       let hasValidBounds = false;
+      const validCoords: Array<{ lat: number; lng: number }> = [];
+      
       tours.forEach((tour) => {
         try {
           if (tour.mapx && tour.mapy) {
             const coords = convertKATECToWGS84(tour.mapx, tour.mapy);
-            bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
-            hasValidBounds = true;
+            // 좌표 범위 검사 (한국 영역: 위도 33-43, 경도 124-132)
+            if (coords.lat >= 33 && coords.lat <= 43 && coords.lng >= 124 && coords.lng <= 132) {
+              bounds.extend(new window.naver.maps.LatLng(coords.lat, coords.lng));
+              validCoords.push(coords);
+              hasValidBounds = true;
+            }
           }
         } catch {
           // ignore
         }
       });
+      
       if (hasValidBounds) {
         mapInstanceRef.current.fitBounds(bounds);
+      } else if (validCoords.length > 0) {
+        // 유효한 좌표가 있지만 범위가 없으면 첫 번째 좌표로 이동
+        const firstCoord = validCoords[0];
+        mapInstanceRef.current.setCenter(new window.naver.maps.LatLng(firstCoord.lat, firstCoord.lng));
+        mapInstanceRef.current.setZoom(13);
       }
     }
   }, [tours, updateMarkers]);
