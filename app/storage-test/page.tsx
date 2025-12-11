@@ -55,11 +55,13 @@ export default function StorageTestPage() {
       setFiles(data || []);
     } catch (err) {
       setError(
-        err instanceof Error
+        err instanceof globalThis.Error
           ? err.message
           : "파일 목록을 가져오는데 실패했습니다.",
       );
-      console.error("Error fetching files:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error fetching files:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -109,9 +111,13 @@ export default function StorageTestPage() {
       event.target.value = "";
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "파일 업로드에 실패했습니다.",
+        err instanceof globalThis.Error
+          ? err.message
+          : "파일 업로드에 실패했습니다.",
       );
-      console.error("Error uploading file:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error uploading file:", err);
+      }
     } finally {
       setUploading(false);
     }
@@ -140,9 +146,13 @@ export default function StorageTestPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "파일 다운로드에 실패했습니다.",
+        err instanceof globalThis.Error
+          ? err.message
+          : "파일 다운로드에 실패했습니다.",
       );
-      console.error("Error downloading file:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error downloading file:", err);
+      }
     }
   };
 
@@ -163,9 +173,13 @@ export default function StorageTestPage() {
       await fetchFiles();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "파일 삭제에 실패했습니다.",
+        err instanceof globalThis.Error
+          ? err.message
+          : "파일 삭제에 실패했습니다.",
       );
-      console.error("Error deleting file:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error deleting file:", err);
+      }
     }
   };
 

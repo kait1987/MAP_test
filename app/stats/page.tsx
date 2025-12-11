@@ -73,7 +73,9 @@ async function StatsData() {
       </div>
     );
   } catch (err: unknown) {
-    console.error("통계 데이터 로드 실패:", err);
+    if (process.env.NODE_ENV === "development") {
+      console.error("통계 데이터 로드 실패:", err);
+    }
     
     // 에러 메시지 추출
     let errorMessage = "";
@@ -109,7 +111,11 @@ async function StatsData() {
 
 /**
  * 통계 대시보드 페이지 (Server Component)
+ * 동적 렌더링으로 설정하여 빌드 시 API 호출 방지
  */
+export const dynamic = 'force-dynamic'; // 빌드 시 정적 생성 방지
+export const revalidate = 3600; // 1시간마다 재검증 (ISR)
+
 export default async function StatsPage() {
   return (
     <main className="min-h-[calc(100vh-80px)] py-8" role="main">

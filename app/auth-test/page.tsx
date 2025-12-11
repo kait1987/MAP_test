@@ -41,7 +41,9 @@ export default function AuthTestPage() {
       setConnectionStatus("success");
     } catch (err) {
       setConnectionStatus("error");
-      setError(err instanceof Error ? err.message : "연결 테스트 실패");
+      setError(
+        err instanceof globalThis.Error ? err.message : "연결 테스트 실패",
+      );
       console.error("Connection test error:", err);
     }
   }, [supabase]);
@@ -89,9 +91,13 @@ export default function AuthTestPage() {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "사용자 데이터 조회/생성 실패",
+        err instanceof globalThis.Error
+          ? err.message
+          : "사용자 데이터 조회/생성 실패",
       );
-      console.error("Fetch or create user error:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Fetch or create user error:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -117,8 +123,12 @@ export default function AuthTestPage() {
       setEditingName(false);
       setNewName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "이름 업데이트 실패");
-      console.error("Update name error:", err);
+      setError(
+        err instanceof globalThis.Error ? err.message : "이름 업데이트 실패",
+      );
+      if (process.env.NODE_ENV === "development") {
+        console.error("Update name error:", err);
+      }
     }
   };
 

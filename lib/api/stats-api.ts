@@ -76,10 +76,21 @@ async function getRegionStatsInternal(): Promise<RegionStats[]> {
       return [];
     }
 
-    // 2. 각 지역별로 병렬 API 호출
-    const regionPromises = areas
-      .filter((area) => area.code && area.name) // code와 name이 있는 지역만 필터링
-      .map(async (area: AreaCodeItem) => {
+    // 2. 각 지역별로 배치 처리 (레이트 리밋 방지)
+    // 5개씩 배치로 처리하고, 각 배치 사이에 500ms 대기
+    const filteredAreas = areas.filter(
+      (area) => area.code && area.name
+    ); // code와 name이 있는 지역만 필터링
+
+    const results: (RegionStats | null)[] = [];
+    const BATCH_SIZE = 5; // 한 번에 처리할 지역 수 (3 → 5로 증가)
+    const BATCH_DELAY = 500; // 배치 사이 대기 시간 (1000 → 500으로 감소)
+
+    for (let i = 0; i < filteredAreas.length; i += BATCH_SIZE) {
+      const batch = filteredAreas.slice(i, i + BATCH_SIZE);
+
+      // 현재 배치 병렬 처리
+      const batchPromises = batch.map(async (area: AreaCodeItem) => {
         try {
           // 관광지 타입(12)으로 조회하여 해당 지역의 전체 관광지 수 파악
           // 실제로는 모든 타입의 합계가 필요하지만, API 제약으로 인해 관광지 타입만 조회
@@ -88,7 +99,7 @@ async function getRegionStatsInternal(): Promise<RegionStats[]> {
             contentTypeId: CONTENT_TYPE.TOURIST_SPOT, // 관광지 타입
             numOfRows: 1, // totalCount만 필요하므로 최소값
             pageNo: 1,
-            timeout: 20000, // 통계 API는 더 긴 타임아웃 사용 (20초)
+            timeout: 15000, // 통계 API 타임아웃 (20000 → 15000으로 감소)
           });
 
           return {
@@ -98,23 +109,32 @@ async function getRegionStatsInternal(): Promise<RegionStats[]> {
           } as RegionStats;
         } catch (error) {
           // 개별 지역 API 호출 실패 시 해당 지역은 제외
-          console.warn(
-            `지역 통계 조회 실패 (${area.name || "unknown"}, ${area.code || "unknown"}):`,
-            error
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.warn(
+              `지역 통계 조회 실패 (${area.name || "unknown"}, ${area.code || "unknown"}):`,
+              error
+            );
+          }
           return null;
         }
       });
 
-    // 3. 모든 Promise 완료 대기
-    const results = await Promise.all(regionPromises);
+      // 배치 결과 대기
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
 
-    // 4. null 제거 및 유효한 데이터만 필터링
+      // 마지막 배치가 아니면 대기 시간 추가 (레이트 리밋 방지)
+      if (i + BATCH_SIZE < filteredAreas.length) {
+        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
+      }
+    }
+
+    // 3. null 제거 및 유효한 데이터만 필터링
     const validStats = results.filter(
       (stat): stat is RegionStats => stat !== null && stat.count > 0
     );
 
-    // 5. count 기준 내림차순 정렬
+    // 4. count 기준 내림차순 정렬
     validStats.sort((a, b) => b.count - a.count);
 
     return validStats;
@@ -155,39 +175,58 @@ export const getRegionStats = unstable_cache(
  */
 async function getTypeStatsInternal(): Promise<TypeStats[]> {
   try {
-    // 1. 각 타입별로 병렬 API 호출
-    // 전체 지역의 합계를 얻기 위해 서울(areaCode: "1")로 조회
-    // 실제로는 모든 지역의 합계가 정확하지만, 성능을 위해 대표 지역으로 조회
-    const typePromises = CONTENT_TYPE_IDS.map(async (contentTypeId) => {
-      try {
-        const response = await getAreaBasedList({
-          areaCode: "1", // 서울 (대표 지역)
-          contentTypeId,
-          numOfRows: 1, // totalCount만 필요하므로 최소값
-          pageNo: 1,
-        });
+    // 1. 각 타입별로 배치 처리 (레이트 리밋 방지)
+    // 5개씩 배치로 처리하고, 각 배치 사이에 500ms 대기
+    const results: (Omit<TypeStats, "percentage"> & {
+      percentage: number;
+    } | null)[] = [];
+    const BATCH_SIZE = 5; // 한 번에 처리할 타입 수 (3 → 5로 증가)
+    const BATCH_DELAY = 500; // 배치 사이 대기 시간 (1000 → 500으로 감소)
 
-        return {
-          contentTypeId,
-          name: getContentTypeName(contentTypeId),
-          count: response.totalCount || 0,
-          percentage: 0, // 나중에 계산
-        } as Omit<TypeStats, "percentage"> & { percentage: number };
-      } catch (error) {
-        // 개별 타입 API 호출 실패 시 해당 타입은 제외
-        // 개발 환경에서만 로그 출력 (프로덕션에서 경고 로그 과다 방지)
-        if (process.env.NODE_ENV === "development") {
-          console.warn(
-            `타입 통계 조회 실패 (${contentTypeId}):`,
-            error
-          );
+    for (let i = 0; i < CONTENT_TYPE_IDS.length; i += BATCH_SIZE) {
+      const batch = CONTENT_TYPE_IDS.slice(i, i + BATCH_SIZE);
+
+      // 현재 배치 병렬 처리
+      const batchPromises = batch.map(async (contentTypeId) => {
+        try {
+          // 전체 지역의 합계를 얻기 위해 서울(areaCode: "1")로 조회
+          // 실제로는 모든 지역의 합계가 정확하지만, 성능을 위해 대표 지역으로 조회
+          const response = await getAreaBasedList({
+            areaCode: "1", // 서울 (대표 지역)
+            contentTypeId,
+            numOfRows: 1, // totalCount만 필요하므로 최소값
+            pageNo: 1,
+            timeout: 15000, // 통계 API 타임아웃 (20000 → 15000으로 감소)
+          });
+
+          return {
+            contentTypeId,
+            name: getContentTypeName(contentTypeId),
+            count: response.totalCount || 0,
+            percentage: 0, // 나중에 계산
+          } as Omit<TypeStats, "percentage"> & { percentage: number };
+        } catch (error) {
+          // 개별 타입 API 호출 실패 시 해당 타입은 제외
+          // 개발 환경에서만 로그 출력 (프로덕션에서 경고 로그 과다 방지)
+          if (process.env.NODE_ENV === "development") {
+            console.warn(
+              `타입 통계 조회 실패 (${contentTypeId}):`,
+              error
+            );
+          }
+          return null;
         }
-        return null;
-      }
-    });
+      });
 
-    // 2. 모든 Promise 완료 대기
-    const results = await Promise.all(typePromises);
+      // 배치 결과 대기
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+
+      // 마지막 배치가 아니면 대기 시간 추가 (레이트 리밋 방지)
+      if (i + BATCH_SIZE < CONTENT_TYPE_IDS.length) {
+        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
+      }
+    }
 
     // 3. null 제거 및 유효한 데이터만 필터링
     const validStats = results.filter(
@@ -199,10 +238,10 @@ async function getTypeStatsInternal(): Promise<TypeStats[]> {
       return [];
     }
 
-    // 4. 전체 관광지 수 계산 (모든 타입의 count 합계)
+    // 3. 전체 관광지 수 계산 (모든 타입의 count 합계)
     const totalCount = validStats.reduce((sum, stat) => sum + stat.count, 0);
 
-    // 5. 각 타입별 비율 계산
+    // 4. 각 타입별 비율 계산
     const typeStats: TypeStats[] = validStats.map((stat) => ({
       contentTypeId: stat.contentTypeId,
       name: stat.name,
@@ -210,7 +249,7 @@ async function getTypeStatsInternal(): Promise<TypeStats[]> {
       percentage: calculatePercentage(stat.count, totalCount),
     }));
 
-    // 6. count 기준 내림차순 정렬
+    // 5. count 기준 내림차순 정렬
     typeStats.sort((a, b) => b.count - a.count);
 
     return typeStats;

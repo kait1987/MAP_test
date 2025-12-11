@@ -25,7 +25,9 @@ interface ErrorProps {
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
     // 에러 로깅 (프로덕션에서는 에러 추적 서비스로 전송)
-    console.error("Application error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Application error:", error);
+    }
   }, [error]);
 
   return (

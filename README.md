@@ -220,9 +220,7 @@ pnpm install
 
 **6-2. .env 파일 생성**
 
-```bash
-cp .env.example .env
-```
+`.env` 파일을 직접 생성하고 아래 환경변수를 입력하세요. 환경변수 목록은 `docs/PRD.md`의 "8.4 보안 및 환경변수" 섹션을 참고하세요.
 
 **6-3. Supabase 환경 변수 설정**
 

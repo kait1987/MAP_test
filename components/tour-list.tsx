@@ -87,7 +87,7 @@ export default function TourList({
     // 네트워크 에러 감지
     const isNetworkError =
       errorType === "network" ||
-      (error instanceof Error &&
+      (error instanceof globalThis.Error &&
         (error.message.includes("fetch") ||
           error.message.includes("network") ||
           error.message.includes("Failed to fetch")));

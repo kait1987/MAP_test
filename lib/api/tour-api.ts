@@ -102,11 +102,15 @@ export class TourApiError extends Error {
  */
 function isRetryableError(error: unknown): boolean {
   if (error instanceof TourApiError) {
+    // 429 Too Many Requests는 레이트 리밋이므로 재시도 가능
+    if (error.statusCode === 429) {
+      return true;
+    }
     // 5xx 에러는 재시도 가능
     if (error.statusCode && error.statusCode >= 500) {
       return true;
     }
-    // 4xx 에러는 재시도 안 함
+    // 기타 4xx 에러는 재시도 안 함
     return false;
   }
   // 네트워크 에러, 타임아웃 등은 재시도 가능
@@ -201,7 +205,7 @@ function handleApiError(
       hasParams: !!context?.params,
       paramKeys: context?.params ? Object.keys(context.params) : [],
     });
-    if (error instanceof Error) {
+    if (error instanceof globalThis.Error) {
       console.log("Error message:", error.message);
       // stack은 너무 길어서 제외
     } else {
@@ -214,7 +218,7 @@ function handleApiError(
     return error;
   }
 
-  if (error instanceof Error) {
+  if (error instanceof globalThis.Error) {
     return new TourApiError(
       `API 호출 중 에러가 발생했습니다: ${error.message}`,
       undefined,
@@ -261,14 +265,28 @@ async function retryRequest<T>(
         break;
       }
 
-      // 지연 시간 계산 (배열 범위 체크)
-      const delay = delays[attempt] || delays[delays.length - 1];
+      // 지연 시간 계산
+      let delay: number;
 
-      console.log(
-        `API 호출 실패 (시도 ${attempt + 1}/${
-          maxRetries + 1
-        }). ${delay}ms 후 재시도...`,
-      );
+      // 429 Too Many Requests 에러는 더 긴 대기 시간 사용
+      if (error instanceof TourApiError && error.statusCode === 429) {
+        // 429 에러: 5초, 10초, 15초 순으로 증가
+        const rateLimitDelays = [5000, 10000, 15000];
+        delay =
+          rateLimitDelays[attempt] ||
+          rateLimitDelays[rateLimitDelays.length - 1];
+      } else {
+        // 기타 에러: 기본 지연 시간 사용
+        delay = delays[attempt] || delays[delays.length - 1];
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `API 호출 실패 (시도 ${attempt + 1}/${
+            maxRetries + 1
+          }). ${delay}ms 후 재시도...`,
+        );
+      }
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -435,7 +453,7 @@ async function fetchApiResponse(
       }
 
       // AbortError는 타임아웃
-      if (error instanceof Error && error.name === "AbortError") {
+      if (error instanceof globalThis.Error && error.name === "AbortError") {
         throw new TourApiError(
           `API 요청 타임아웃 (${timeout}ms 초과)`,
           undefined,
@@ -604,7 +622,12 @@ export async function getAreaBasedList(params: {
     apiParams.modifiedtime = params.modifiedtime;
   }
 
-  const response = await fetchApiResponse(endpoint, apiParams, params.timeout);
+  // params.timeout이 undefined일 때 기본값 사용 (명시적 undefined 전달 방지)
+  const response = await fetchApiResponse(
+    endpoint,
+    apiParams,
+    params.timeout ?? REQUEST_TIMEOUT,
+  );
 
   // 디버깅: API 응답 구조 확인
   if (process.env.NODE_ENV === "development") {

@@ -37,7 +37,7 @@
     - [ ] `NEXT_PUBLIC_NAVER_MAP_CLIENT_ID` (네이버 지도)
     - [ ] Clerk 인증 키 확인
     - [ ] Supabase 키 확인
-  - [ ] `.env.example` 파일 생성
+    - [ ] 환경변수 목록은 `docs/PRD.md`의 "8.4 보안 및 환경변수" 섹션 참고
 - [x] API 클라이언트 구현
   - [x] `lib/api/tour-api.ts` 생성
     - [x] `getAreaCode()` - 지역코드 조회 (`areaCode2`)

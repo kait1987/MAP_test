@@ -135,7 +135,7 @@ supabase/migrations/20241030014800_create_users_table.sql
 
 ## Environment Variables
 
-`.env.example` 참고하여 `.env` 파일 생성:
+환경변수 목록은 `docs/PRD.md`의 "8.4 보안 및 환경변수" 섹션을 참고하여 `.env` 파일을 생성하세요:
 
 ```bash
 # Clerk Authentication

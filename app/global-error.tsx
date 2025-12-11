@@ -24,7 +24,9 @@ interface GlobalErrorProps {
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
   useEffect(() => {
     // 에러 로깅 (프로덕션에서는 에러 추적 서비스로 전송)
-    console.error("Global application error:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Global application error:", error);
+    }
   }, [error]);
 
   return (

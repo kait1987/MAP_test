@@ -33,7 +33,9 @@ async function AreaListData() {
     const areas = await getAreaCode();
     return <TourFilters areas={areas} />;
   } catch (error) {
-    console.error("지역 목록 로드 실패:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("지역 목록 로드 실패:", error);
+    }
     // 에러 발생 시 빈 배열로 필터 표시
     return <TourFilters areas={[]} />;
   }
@@ -196,11 +198,13 @@ async function TourListData({
       />
     );
   } catch (error) {
-    console.error("관광지 목록 로드 실패:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("관광지 목록 로드 실패:", error);
+    }
 
     // 에러 타입 구분
     let errorType: "api" | "network" | "generic" = "api";
-    if (error instanceof Error) {
+    if (error instanceof globalThis.Error) {
       if (
         error.message.includes("fetch") ||
         error.message.includes("network") ||
@@ -213,7 +217,11 @@ async function TourListData({
     return (
       <HomeContent
         tours={[]}
-        error={error instanceof Error ? error : new Error("알 수 없는 오류")}
+        error={
+          error instanceof globalThis.Error
+            ? error
+            : new globalThis.Error("알 수 없는 오류")
+        }
         errorType={errorType}
       />
     );
