@@ -18,7 +18,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { getDetailCommon } from "@/lib/api/tour-api";
 import type { TourDetail, TourItem } from "@/lib/types/tour";
-import TourCard from "@/components/tour-card";
+import BookmarkList from "@/components/bookmarks/bookmark-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Error } from "@/components/ui/error";
 import { Bookmark, BookmarkCheck } from "lucide-react";
@@ -92,10 +92,10 @@ async function BookmarksData() {
 
     const supabaseUserId = userData.id;
 
-    // 북마크 목록 조회
+    // 북마크 목록 조회 (content_id와 created_at 함께 조회)
     const { data: bookmarks, error: bookmarksError } = await supabase
       .from("bookmarks")
-      .select("content_id")
+      .select("content_id, created_at")
       .eq("user_id", supabaseUserId)
       .order("created_at", { ascending: false });
 
@@ -116,6 +116,12 @@ async function BookmarksData() {
         </div>
       );
     }
+
+    // 북마크 생성 시간 정보를 Record 형태로 변환
+    const bookmarkCreatedAt: Record<string, string> = {};
+    bookmarks.forEach((bookmark) => {
+      bookmarkCreatedAt[bookmark.content_id] = bookmark.created_at;
+    });
 
     const contentIds = bookmarks.map((bookmark) => bookmark.content_id);
 
@@ -169,24 +175,7 @@ async function BookmarksData() {
     }
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">
-              내 북마크 ({tours.length}개)
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              북마크한 관광지를 확인하세요
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {tours.map((tour) => (
-            <TourCard key={tour.contentid} tour={tour} />
-          ))}
-        </div>
-      </div>
+      <BookmarkList tours={tours} bookmarkCreatedAt={bookmarkCreatedAt} />
     );
   } catch (error) {
     console.error("북마크 목록 로드 실패:", error);
