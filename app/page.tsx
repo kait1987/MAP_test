@@ -50,7 +50,12 @@ async function TourListData({
   try {
     // searchParams에서 필터 파라미터 추출
     const filters = parseFilterParams(searchParams);
-    console.log("[TourListData] 필터 파라미터:", { petAllowed: filters.petAllowed, petSize: filters.petSize });
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TourListData] 필터 파라미터:", {
+        petAllowed: filters.petAllowed,
+        petSize: filters.petSize,
+      });
+    }
 
     // 기본값 설정
     const areaCode = filters.areaCode || "1"; // 서울
@@ -83,10 +88,14 @@ async function TourListData({
     // 반려동물 필터가 활성화되어 있으면 반려동물 정보 가져오기
     let toursWithPetInfo = result.items;
     if (filters.petAllowed) {
-      console.log("[TourListData] 반려동물 필터 활성화, 반려동물 정보 가져오기 시작");
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "[TourListData] 반려동물 필터 활성화, 반려동물 정보 가져오기 시작",
+        );
+      }
       // 병렬로 모든 관광지의 반려동물 정보 가져오기
       const petInfoPromises = result.items.map((tour) =>
-        getDetailPetTour({ contentId: tour.contentid }).catch(() => null)
+        getDetailPetTour({ contentId: tour.contentid }).catch(() => null),
       );
       const petInfos = await Promise.all(petInfoPromises);
 
@@ -95,15 +104,31 @@ async function TourListData({
         ...tour,
         petInfo: petInfos[index] || undefined,
       }));
-      console.log("[TourListData] 반려동물 정보 가져오기 완료:", toursWithPetInfo.length, "개 항목");
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "[TourListData] 반려동물 정보 가져오기 완료:",
+          toursWithPetInfo.length,
+          "개 항목",
+        );
+      }
     } else {
-      console.log("[TourListData] 반려동물 필터 비활성화, 전체 목록 반환:", toursWithPetInfo.length, "개 항목");
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "[TourListData] 반려동물 필터 비활성화, 전체 목록 반환:",
+          toursWithPetInfo.length,
+          "개 항목",
+        );
+      }
     }
-    
+
     // 디버깅: 좌표 정보 확인
     if (process.env.NODE_ENV === "development") {
-      const toursWithCoords = toursWithPetInfo.filter((tour) => tour.mapx && tour.mapy);
-      const toursWithoutCoords = toursWithPetInfo.filter((tour) => !tour.mapx || !tour.mapy);
+      const toursWithCoords = toursWithPetInfo.filter(
+        (tour) => tour.mapx && tour.mapy,
+      );
+      const toursWithoutCoords = toursWithPetInfo.filter(
+        (tour) => !tour.mapx || !tour.mapy,
+      );
       console.log("[TourListData] 좌표 정보:", {
         전체개수: toursWithPetInfo.length,
         좌표있음: toursWithCoords.length,
@@ -121,40 +146,42 @@ async function TourListData({
     if (toursWithPetInfo.length > 0) {
       const firstItem = toursWithPetInfo[0];
       const itemsWithImages = toursWithPetInfo.filter(
-        (item) => item.firstimage || item.firstimage2
+        (item) => item.firstimage || item.firstimage2,
       );
-      const itemsWithValidContentId = toursWithPetInfo.filter(
-        (item) => {
-          const id = item.contentid != null ? String(item.contentid).trim() : "";
-          return id !== "" && id !== "undefined" && id !== "null" && !isNaN(Number(id));
-        }
-      );
-      
-      console.log("[TourListData] API 응답 요약:", {
-        itemsCount: toursWithPetInfo.length,
-        totalCount: result.totalCount,
-        petFilterActive: filters.petAllowed,
-        imagesCount: itemsWithImages.length,
-        validContentIdCount: itemsWithValidContentId.length,
-        firstItem: {
-          contentid: firstItem.contentid,
-          contentidType: typeof firstItem.contentid,
-          title: firstItem.title,
-          firstimage: firstItem.firstimage || "(없음)",
-          firstimageType: typeof firstItem.firstimage,
-          firstimage2: firstItem.firstimage2 || "(없음)",
-          firstimage2Type: typeof firstItem.firstimage2,
-          hasPetInfo: !!firstItem.petInfo,
-        },
-        // 이미지가 없는 항목 샘플
-        itemsWithoutImages: toursWithPetInfo
-          .filter((item) => !item.firstimage && !item.firstimage2)
-          .slice(0, 3)
-          .map((item) => ({
-            contentid: item.contentid,
-            title: item.title,
-          })),
+      const itemsWithValidContentId = toursWithPetInfo.filter((item) => {
+        const id = item.contentid != null ? String(item.contentid).trim() : "";
+        return (
+          id !== "" && id !== "undefined" && id !== "null" && !isNaN(Number(id))
+        );
       });
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("[TourListData] API 응답 요약:", {
+          itemsCount: toursWithPetInfo.length,
+          totalCount: result.totalCount,
+          petFilterActive: filters.petAllowed,
+          imagesCount: itemsWithImages.length,
+          validContentIdCount: itemsWithValidContentId.length,
+          firstItem: {
+            contentid: firstItem.contentid,
+            contentidType: typeof firstItem.contentid,
+            title: firstItem.title,
+            firstimage: firstItem.firstimage || "(없음)",
+            firstimageType: typeof firstItem.firstimage,
+            firstimage2: firstItem.firstimage2 || "(없음)",
+            firstimage2Type: typeof firstItem.firstimage2,
+            hasPetInfo: !!firstItem.petInfo,
+          },
+          // 이미지가 없는 항목 샘플
+          itemsWithoutImages: toursWithPetInfo
+            .filter((item) => !item.firstimage && !item.firstimage2)
+            .slice(0, 3)
+            .map((item) => ({
+              contentid: item.contentid,
+              title: item.title,
+            })),
+        });
+      }
     }
 
     return (

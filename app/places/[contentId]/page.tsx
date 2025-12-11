@@ -438,10 +438,14 @@ export async function generateMetadata({
 }: TourDetailPageProps): Promise<Metadata> {
   // Next.js 15/16: params를 await하여 사용
   const resolvedParams = await params;
-  console.log("[generateMetadata] resolvedParams:", resolvedParams);
+  if (process.env.NODE_ENV === "development") {
+    console.log("[generateMetadata] resolvedParams:", resolvedParams);
+  }
 
   const contentId = extractContentId(resolvedParams);
-  console.log("[generateMetadata] extracted contentId:", contentId);
+  if (process.env.NODE_ENV === "development") {
+    console.log("[generateMetadata] extracted contentId:", contentId);
+  }
 
   // contentId 검증
   if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
@@ -467,7 +471,9 @@ export async function generateMetadata({
     }
 
     if (!trimmedContentId) {
-      console.error("[generateMetadata] contentId가 빈 문자열입니다.");
+      if (process.env.NODE_ENV === "development") {
+        console.error("[generateMetadata] contentId가 빈 문자열입니다.");
+      }
       throw new globalThis.Error("contentId는 필수 파라미터입니다.");
     }
 
@@ -542,10 +548,14 @@ export async function generateMetadata({
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
   // Next.js 15/16: params를 await하여 사용
   const resolvedParams = await params;
-  console.log("[TourDetailPage] resolvedParams:", resolvedParams);
+  if (process.env.NODE_ENV === "development") {
+    console.log("[TourDetailPage] resolvedParams:", resolvedParams);
+  }
 
   const contentId = extractContentId(resolvedParams);
-  console.log("[TourDetailPage] extracted contentId:", contentId);
+  if (process.env.NODE_ENV === "development") {
+    console.log("[TourDetailPage] extracted contentId:", contentId);
+  }
 
   // contentId 검증
   if (!contentId || typeof contentId !== "string" || contentId.trim() === "") {
