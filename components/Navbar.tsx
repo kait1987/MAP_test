@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * @file Navbar.tsx
@@ -135,8 +136,9 @@ const Navbar = () => {
           </nav>
         </div>
 
-        {/* 데스크톱: 로그인 버튼 */}
+        {/* 데스크톱: 다크모드 토글 및 로그인 버튼 */}
         <div className="hidden md:flex md:items-center md:gap-4">
+          <ThemeToggle />
           {isMounted && isLoaded && !isSignedIn && (
             <SignInButton mode="modal">
               <Button variant="default">로그인</Button>
@@ -150,8 +152,9 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* 모바일: 햄버거 메뉴 버튼 */}
+        {/* 모바일: 다크모드 토글, 사용자 버튼, 햄버거 메뉴 */}
         <div className="flex md:hidden items-center gap-2">
+          <ThemeToggle />
           {isMounted && isLoaded && isSignedIn && (
             <UserButton 
               userProfileMode="navigation"

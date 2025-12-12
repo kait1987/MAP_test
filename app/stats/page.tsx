@@ -20,10 +20,12 @@ import StatsSummary, {
 import RegionChart, {
   RegionChartSkeleton,
 } from "@/components/stats/region-chart";
-import TypeChart, {
-  TypeChartSkeleton,
-} from "@/components/stats/type-chart";
-import { getStatsSummary, getRegionStats, getTypeStats } from "@/lib/api/stats-api";
+import TypeChart, { TypeChartSkeleton } from "@/components/stats/type-chart";
+import {
+  getStatsSummary,
+  getRegionStats,
+  getTypeStats,
+} from "@/lib/api/stats-api";
 
 /**
  * 통계 섹션 스켈레톤 UI
@@ -76,7 +78,7 @@ async function StatsData() {
     if (process.env.NODE_ENV === "development") {
       console.error("통계 데이터 로드 실패:", err);
     }
-    
+
     // 에러 메시지 추출
     let errorMessage = "";
     if (err instanceof globalThis.Error) {
@@ -86,7 +88,7 @@ async function StatsData() {
     } else {
       errorMessage = "통계 데이터를 불러올 수 없습니다.";
     }
-    
+
     // 에러 타입 구분
     let errorType: "api" | "network" | "generic" = "api";
     if (
@@ -96,7 +98,7 @@ async function StatsData() {
     ) {
       errorType = "network";
     }
-    
+
     return (
       <div className="space-y-8">
         <Error
@@ -113,7 +115,7 @@ async function StatsData() {
  * 통계 대시보드 페이지 (Server Component)
  * 동적 렌더링으로 설정하여 빌드 시 API 호출 방지
  */
-export const dynamic = 'force-dynamic'; // 빌드 시 정적 생성 방지
+export const dynamic = "force-dynamic"; // 빌드 시 정적 생성 방지
 export const revalidate = 3600; // 1시간마다 재검증 (ISR)
 
 export default async function StatsPage() {
@@ -138,4 +140,3 @@ export default async function StatsPage() {
     </main>
   );
 }
-

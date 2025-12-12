@@ -32,7 +32,7 @@ import type {
   PetTourInfo,
   TourItem,
 } from "@/lib/types/tour";
-import { isValidImageUrl } from "@/lib/utils/image";
+import { isValidImageUrl, convertToHttps } from "@/lib/utils/image";
 import DetailInfo from "@/components/tour-detail/detail-info";
 import DetailIntro from "@/components/tour-detail/detail-intro";
 import DetailGallery from "@/components/tour-detail/detail-gallery";
@@ -146,35 +146,65 @@ async function TourDetailData({ contentId }: { contentId: string }) {
           imagesCount: images.length,
           hasValidImages: images.length > 0,
           firstImageUrl: images[0]?.originimgurl || "없음",
+          allImageUrls: images.map((img) => ({
+            originimgurl: img.originimgurl || "없음",
+            smallimageurl: img.smallimageurl || "없음",
+            isValid: isValidImageUrl(img.originimgurl),
+          })),
         });
       }
 
       // detailCommon에 이미지가 없고 detailImage에 유효한 이미지가 있는 경우
       // 첫 번째 유효한 이미지를 detail.firstimage로 설정
       if (!isValidImageUrl(detail.firstimage) && images.length > 0) {
-        const firstValidImage = images.find((img) =>
-          isValidImageUrl(img.originimgurl),
-        );
-        if (firstValidImage?.originimgurl) {
-          // 타입 안전한 방식으로 이미지 설정 (새 객체 생성)
-          detail = { ...detail, firstimage: firstValidImage.originimgurl };
-          if (process.env.NODE_ENV === "development") {
-            console.log(
-              "[TourDetailData] ✅ detailImage에서 이미지 보완 (firstimage):",
+        // images 배열은 이미 getDetailImage에서 유효한 이미지만 필터링되어 있음
+        // 따라서 첫 번째 이미지를 직접 사용
+        const firstImage = images[0];
+        if (firstImage?.originimgurl) {
+          // HTTP를 HTTPS로 변환하여 Mixed Content 경고 방지
+          const httpsUrl = convertToHttps(firstImage.originimgurl);
+          if (httpsUrl) {
+            // 타입 안전한 방식으로 이미지 설정 (새 객체 생성)
+            detail = { ...detail, firstimage: httpsUrl };
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "[TourDetailData] ✅ detailImage에서 이미지 보완 (firstimage):",
+                {
+                  contentId: detail.contentid,
+                  title: detail.title,
+                  originalUrl: firstImage.originimgurl,
+                  convertedUrl: httpsUrl,
+                },
+              );
+            }
+          } else if (process.env.NODE_ENV === "development") {
+            console.warn(
+              "[TourDetailData] ⚠️ HTTPS 변환 실패:",
               {
                 contentId: detail.contentid,
-                title: detail.title,
-                originimgurl: firstValidImage.originimgurl,
+                originalUrl: firstImage.originimgurl,
               },
             );
           }
         } else if (process.env.NODE_ENV === "development") {
           console.warn(
-            "[TourDetailData] ⚠️ detailImage에 유효한 이미지 없음:",
+            "[TourDetailData] ⚠️ detailImage 첫 번째 이미지에 originimgurl 없음:",
             {
               contentId: detail.contentid,
               imagesCount: images.length,
-              firstImageUrl: images[0]?.originimgurl || "없음",
+              firstImage: firstImage,
+            },
+          );
+        }
+      } else if (process.env.NODE_ENV === "development") {
+        if (isValidImageUrl(detail.firstimage)) {
+          console.log("[TourDetailData] detailCommon에 이미지 있음, 보완 불필요");
+        } else if (images.length === 0) {
+          console.warn(
+            "[TourDetailData] ⚠️ detailImage API가 빈 배열 반환:",
+            {
+              contentId: detail.contentid,
+              title: detail.title,
             },
           );
         }
@@ -182,20 +212,25 @@ async function TourDetailData({ contentId }: { contentId: string }) {
 
       // detailCommon에 firstimage2가 없고 detailImage에 두 번째 유효한 이미지가 있는 경우
       if (!isValidImageUrl(detail.firstimage2) && images.length > 1) {
-        const secondValidImage = images
-          .slice(1)
-          .find((img) => isValidImageUrl(img.originimgurl));
-        if (secondValidImage?.originimgurl) {
-          // 타입 안전한 방식으로 이미지 설정 (새 객체 생성)
-          detail = { ...detail, firstimage2: secondValidImage.originimgurl };
-          if (process.env.NODE_ENV === "development") {
-            console.log(
-              "[TourDetailData] ✅ detailImage에서 이미지 보완 (firstimage2):",
-              {
-                contentId: detail.contentid,
-                originimgurl: secondValidImage.originimgurl,
-              },
-            );
+        // images 배열은 이미 getDetailImage에서 유효한 이미지만 필터링되어 있음
+        // 따라서 두 번째 이미지를 직접 사용
+        const secondImage = images[1];
+        if (secondImage?.originimgurl) {
+          // HTTP를 HTTPS로 변환하여 Mixed Content 경고 방지
+          const httpsUrl = convertToHttps(secondImage.originimgurl);
+          if (httpsUrl) {
+            // 타입 안전한 방식으로 이미지 설정 (새 객체 생성)
+            detail = { ...detail, firstimage2: httpsUrl };
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "[TourDetailData] ✅ detailImage에서 이미지 보완 (firstimage2):",
+                {
+                  contentId: detail.contentid,
+                  originalUrl: secondImage.originimgurl,
+                  convertedUrl: httpsUrl,
+                },
+              );
+            }
           }
         }
       }
@@ -207,7 +242,9 @@ async function TourDetailData({ contentId }: { contentId: string }) {
           : String(imageError);
         console.warn("[TourDetailData] ⚠️ detailImage API 호출 실패:", {
           contentId: detail.contentid,
+          title: detail.title,
           error: errorMessage,
+          stack: isError(imageError) ? imageError.stack : undefined,
         });
       }
     }
@@ -498,8 +535,9 @@ export async function generateMetadata({
       : `${detail.title}의 상세 정보를 확인하세요.`;
 
     // 이미지 URL 생성 (firstimage 우선, 없으면 firstimage2, 둘 다 없으면 기본 이미지)
-    const imageUrl =
-      detail.firstimage || detail.firstimage2 || `${siteUrl}/og-image.png`; // 기본 이미지 (나중에 추가)
+    // HTTP를 HTTPS로 변환하여 Mixed Content 경고 방지
+    const rawImageUrl = detail.firstimage || detail.firstimage2 || `${siteUrl}/og-image.png`;
+    const imageUrl = convertToHttps(rawImageUrl) || rawImageUrl; // 변환 실패 시 원본 사용
 
     return {
       title: `${detail.title} | My Trip`,

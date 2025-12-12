@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Suspense } from "react";
+import { ThemeProvider } from "next-themes";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -73,16 +74,23 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="ko">
+      <html lang="ko" suppressHydrationWarning>
         <body>
-          <SyncUserProvider>
-            <Suspense fallback={<div className="h-16" />}>
-              <Navbar />
-            </Suspense>
-            {children}
-            <Footer />
-            <Toaster />
-          </SyncUserProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <SyncUserProvider>
+              <Suspense fallback={<div className="h-16" />}>
+                <Navbar />
+              </Suspense>
+              {children}
+              <Footer />
+              <Toaster />
+            </SyncUserProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

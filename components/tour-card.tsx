@@ -21,6 +21,7 @@ import type { TourItem } from "@/lib/types/tour";
 import { getContentTypeName } from "@/lib/types/stats";
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { convertToHttps } from "@/lib/utils/image";
 
 export interface TourCardProps {
   tour: TourItem;
@@ -48,14 +49,19 @@ function getImageUrl(tour: TourItem): string | null {
     ) {
       // 절대 URL (http:// 또는 https://로 시작)
       if (url.startsWith("http://") || url.startsWith("https://")) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[TourCard] firstimage URL 발견:", {
-            contentId: tour.contentid,
-            title: tour.title,
-            url,
-          });
+        // HTTP를 HTTPS로 변환하여 Mixed Content 경고 방지
+        const httpsUrl = convertToHttps(url);
+        if (httpsUrl) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[TourCard] firstimage URL 발견:", {
+              contentId: tour.contentid,
+              title: tour.title,
+              originalUrl: url,
+              convertedUrl: httpsUrl,
+            });
+          }
+          return httpsUrl;
         }
-        return url;
       }
       // 개발 환경에서만 로깅
       if (process.env.NODE_ENV === "development") {
@@ -97,14 +103,19 @@ function getImageUrl(tour: TourItem): string | null {
     ) {
       // 절대 URL (http:// 또는 https://로 시작)
       if (url.startsWith("http://") || url.startsWith("https://")) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[TourCard] firstimage2 URL 발견:", {
-            contentId: tour.contentid,
-            title: tour.title,
-            url,
-          });
+        // HTTP를 HTTPS로 변환하여 Mixed Content 경고 방지
+        const httpsUrl = convertToHttps(url);
+        if (httpsUrl) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[TourCard] firstimage2 URL 발견:", {
+              contentId: tour.contentid,
+              title: tour.title,
+              originalUrl: url,
+              convertedUrl: httpsUrl,
+            });
+          }
+          return httpsUrl;
         }
-        return url;
       }
       // 개발 환경에서만 로깅
       if (process.env.NODE_ENV === "development") {

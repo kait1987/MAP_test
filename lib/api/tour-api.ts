@@ -1122,9 +1122,32 @@ export async function getDetailImage(params: {
   };
 
   const response = await fetchApiResponse(endpoint, apiParams);
+  
+  // 디버깅: API 응답 확인
+  if (process.env.NODE_ENV === "development") {
+    console.log("[getDetailImage] API 응답 확인:", {
+      contentId: params.contentId,
+      hasItems: !!response.response.body?.items,
+      itemsType: typeof response.response.body?.items,
+      isArray: Array.isArray(response.response.body?.items),
+    });
+  }
+  
   const items = normalizeItems(
     response.response.body?.items as unknown as TourImage | TourImage[],
   );
+
+  // 디버깅: 정규화된 items 확인
+  if (process.env.NODE_ENV === "development") {
+    console.log("[getDetailImage] 정규화된 items:", {
+      contentId: params.contentId,
+      itemsCount: items.length,
+      firstItem: items[0] ? {
+        originimgurl: items[0].originimgurl || "없음",
+        smallimageurl: items[0].smallimageurl || "없음",
+      } : "없음",
+    });
+  }
 
   // 응답 검증: originimgurl 필드가 있는 항목만 필터링
   const validItems = items.filter((item) => {

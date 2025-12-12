@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { convertToHttps } from "@/lib/utils/image";
 
 export interface DetailGalleryProps {
   images: TourImage[];
@@ -34,17 +35,18 @@ export interface DetailGalleryProps {
 /**
  * 이미지 URL 가져오기 (fallback 처리)
  * originimgurl 우선, 없으면 smallimageurl, 둘 다 없으면 null 반환 (로컬 fallback UI 사용)
+ * HTTP URL을 HTTPS로 변환하여 Mixed Content 경고 방지
  */
 function getImageUrl(image: TourImage): string | null {
   if (image.originimgurl && image.originimgurl.trim() !== "") {
-    const url = image.originimgurl.trim();
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    const url = convertToHttps(image.originimgurl.trim());
+    if (url) {
       return url;
     }
   }
   if (image.smallimageurl && image.smallimageurl.trim() !== "") {
-    const url = image.smallimageurl.trim();
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    const url = convertToHttps(image.smallimageurl.trim());
+    if (url) {
       return url;
     }
   }

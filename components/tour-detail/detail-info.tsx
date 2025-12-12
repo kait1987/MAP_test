@@ -31,7 +31,7 @@ import { getContentTypeName } from "@/lib/types/stats";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { isValidImageUrl } from "@/lib/utils/image";
+import { isValidImageUrl, convertToHttps } from "@/lib/utils/image";
 
 export interface DetailInfoProps {
   detail: TourDetail;
@@ -55,20 +55,24 @@ function getImageUrl(detail: TourDetail): string | null {
   
   // firstimage 확인 (유틸리티 함수 사용)
   if (isValidImageUrl(detail.firstimage)) {
-    const url = String(detail.firstimage).trim();
-    if (process.env.NODE_ENV === "development") {
-      console.log("[DetailInfo] ✅ firstimage URL 발견:", url);
+    const url = convertToHttps(String(detail.firstimage).trim());
+    if (url) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[DetailInfo] ✅ firstimage URL 발견:", url);
+      }
+      return url;
     }
-    return url;
   }
   
   // firstimage2 확인 (유틸리티 함수 사용)
   if (isValidImageUrl(detail.firstimage2)) {
-    const url = String(detail.firstimage2).trim();
-    if (process.env.NODE_ENV === "development") {
-      console.log("[DetailInfo] ✅ firstimage2 URL 발견:", url);
+    const url = convertToHttps(String(detail.firstimage2).trim());
+    if (url) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[DetailInfo] ✅ firstimage2 URL 발견:", url);
+      }
+      return url;
     }
-    return url;
   }
   
   if (process.env.NODE_ENV === "development") {
